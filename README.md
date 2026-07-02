@@ -386,23 +386,3 @@ http://localhost:4000/graphql
 8. Test in Apollo Sandbox
 
 ---
-
-# Future Improvements
-
-- Refresh Tokens
-- Change Password
-- Forgot Password
-- Reset Password
-- Email Verification
-- File Upload
-- Comments
-- Activity Logs
-- Pagination
-- Search
-- DataLoader
-- Rate Limiting
-- Docker
-- PostgreSQL
-- CI/CD
-
----
