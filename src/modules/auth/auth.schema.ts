@@ -16,6 +16,11 @@ input LoginInput {
   password: String!
 }
 
+type LogoutPayload {
+  success: Boolean!
+  message: String!
+}
+
 extend type Query {
   me: User
 }
@@ -25,6 +30,6 @@ extend type Mutation {
 
   login(input: LoginInput!): AuthPayload!
 
-  logout: Boolean!
+  logout: LogoutPayload!
 }
 `;

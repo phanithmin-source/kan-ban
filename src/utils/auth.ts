@@ -20,11 +20,11 @@ export function requireAuth(
 
 export function requireRole(
   context: GraphQLContext,
-  role: Role
+  roles: Role[]
 ) {
   const user = requireAuth(context);
 
-  if (user.role !== role) {
+  if (!roles.includes(user.role)) {
     throw new ForbiddenError(
       "You do not have permission"
     );

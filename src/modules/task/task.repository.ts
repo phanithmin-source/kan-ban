@@ -92,6 +92,28 @@ class TaskRepository {
     });
   }
 
+  assignTask(
+    taskId: number,
+    userId: number
+  ) {
+    return prisma.task.update({
+      where: {
+        id: taskId,
+      },
+      data: {
+        assignee: {
+          connect: {
+            id: userId,
+          },
+        },
+      },
+      include: {
+        board: true,
+        assignee: true,
+      },
+    });
+  }
+
   delete(id: number) {
     return prisma.task.delete({
       where: { id },

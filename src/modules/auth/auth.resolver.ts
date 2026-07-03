@@ -25,6 +25,14 @@ export const authResolvers = {
       { input }: LoginArgs
     ) => authService.login(input),
 
-    logout: () => authService.logout(),
+    logout: (
+      _parent: unknown,
+      _args: unknown,
+      context: GraphQLContext
+    ) => {
+      requireAuth(context);
+
+      return authService.logout();
+    },
   },
 };

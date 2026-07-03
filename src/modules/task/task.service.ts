@@ -4,6 +4,7 @@ import { ZodError } from "zod";
 import taskRepository from "./task.repository.js";
 import boardRepository from "../board/board.repository.js";
 import { createTaskSchema, updateTaskSchema } from "./task.validation.js";
+import prisma from "../../config/prisma.js";
 
 import type {
   CreateTaskInput,
@@ -116,6 +117,24 @@ class TaskService {
       status,
     });
   }
+
+  async assignTask(taskId: number, userId: number) {
+  const task = await taskRepository.findById(taskId);
+
+  if (!task) {
+    throw new NotFoundError("Task not found");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new NotFoundError("User not found");
+  }
+
+  return taskRepository.assignTask(taskId, userId);
+}
 }
 
 export default new TaskService();

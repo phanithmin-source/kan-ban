@@ -1,6 +1,12 @@
 import boardService from "./board.service.js";
 import prisma from "../../config/prisma.js";
-import { requireAuth } from "../../utils/auth.js";
+
+import {
+  requireAuth,
+  requireRole,
+} from "../../utils/auth.js";
+
+import { ForbiddenError } from "../../utils/errors.js";
 import type { GraphQLContext } from "../../graphql/context.js";
 
 import type {
@@ -12,10 +18,25 @@ import type {
 
 export const boardResolvers = {
   Query: {
-    boards: () => boardService.getBoards(),
+    boards: (
+      _parent: unknown,
+      _args: unknown,
+      context: GraphQLContext
+    ) => {
+      requireAuth(context);
 
-    board: (_parent: unknown, { id }: GetBoardArgs) =>
-      boardService.getBoardById(Number(id)),
+      return boardService.getBoards();
+    },
+
+    board: (
+      _parent: unknown,
+      { id }: GetBoardArgs,
+      context: GraphQLContext
+    ) => {
+      requireAuth(context);
+
+      return boardService.getBoardById(Number(id));
+    },
   },
 
   Mutation: {
@@ -23,8 +44,11 @@ export const boardResolvers = {
       _parent: unknown,
       { input }: CreateBoardArgs,
       context: GraphQLContext
-      ) => {
-      const user = requireAuth(context);
+    ) => {
+      const user = requireRole(
+        context,
+        ["ADMIN", "MANAGER"]
+      );
 
       return boardService.createBoard(
         input.name,
@@ -32,20 +56,54 @@ export const boardResolvers = {
       );
     },
 
-    updateBoard: (
+    updateBoard: async (
       _parent: unknown,
-      { id, input }: UpdateBoardArgs
-    ) =>
-      boardService.updateBoard(
+      { id, input }: UpdateBoardArgs,
+      context: GraphQLContext
+    ) => {
+      const user = requireAuth(context);
+
+      const board = await boardService.getBoardById(
+        Number(id)
+      );
+
+      if (
+        user.role !== "ADMIN" &&
+        board.ownerId !== user.id
+      ) {
+        throw new ForbiddenError(
+          "You do not have permission"
+        );
+      }
+
+      return boardService.updateBoard(
         Number(id),
         input.name
-      ),
+      );
+    },
 
     deleteBoard: async (
       _parent: unknown,
-      { id }: DeleteBoardArgs
+      { id }: DeleteBoardArgs,
+      context: GraphQLContext
     ) => {
+      const user = requireAuth(context);
+
+      const board = await boardService.getBoardById(
+        Number(id)
+      );
+
+      if (
+        user.role !== "ADMIN" &&
+        board.ownerId !== user.id
+      ) {
+        throw new ForbiddenError(
+          "You do not have permission"
+        );
+      }
+
       await boardService.deleteBoard(Number(id));
+
       return true;
     },
   },
@@ -62,10 +120,10 @@ export const boardResolvers = {
       }),
 
     owner: (parent: { ownerId: number }) =>
-        prisma.user.findUnique({
+      prisma.user.findUnique({
         where: {
-            id: parent.ownerId,
+          id: parent.ownerId,
         },
-        }),
-    },
+      }),
+  },
 };

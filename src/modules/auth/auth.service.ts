@@ -108,8 +108,11 @@ class AuthService {
   }
 
   logout() {
-    return true;
-  }
+    return {
+      success: true,
+      message: "Logged out successfully",
+  };
+}
 }
 
 export default new AuthService();

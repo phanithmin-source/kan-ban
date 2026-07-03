@@ -46,12 +46,15 @@ model Task {
   status      TaskStatus
   priority    TaskPriority
   dueDate     DateTime?
+
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  boardId Int
-  board   Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId     Int
+  board        Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
 
+  assigneeId  Int?
+  assignee    User? @relation("AssignedTasks", fields: [assigneeId], references: [id])
 }
 
 model User {
@@ -65,5 +68,6 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  boards    Board[]
+  boards         Board[]
+  assignedTasks  Task[] @relation("AssignedTasks")
 }

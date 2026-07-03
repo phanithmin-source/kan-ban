@@ -10,6 +10,7 @@ type Task {
   updatedAt: String!
 
  board: Board!
+ assignee: User
 
 }
 
@@ -87,5 +88,10 @@ extend type Mutation {
   updateTask(id: ID!, input: UpdateTaskInput!): Task!
   deleteTask(id: ID!): Boolean!
   updateTaskStatus(id: ID!, status: TaskStatus!): Task!
+
+  assignTask(
+    taskId: ID!
+    userId: ID!
+  ): Task!
 }
 `;
