@@ -30,15 +30,6 @@ class UserRepository {
     });
   }
 
-  create(data: Prisma.UserCreateInput) {
-    return prisma.user.create({
-      data,
-      include: {
-        boards: true,
-      },
-    });
-  }
-
   update(
     id: number,
     data: Prisma.UserUpdateInput

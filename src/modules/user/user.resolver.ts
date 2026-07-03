@@ -1,7 +1,6 @@
 import userService from "./user.service.js";
 
 import type {
-  CreateUserArgs,
   DeleteUserArgs,
   GetUserArgs,
   UpdateUserArgs,
@@ -31,11 +30,6 @@ export const userResolvers = {
   },
 
   Mutation: {
-    createUser: (
-      _parent: unknown,
-      { input }: CreateUserArgs
-    ) => userService.createUser(input),
-
     updateUser: (
       _parent: unknown,
       { id, input }: UpdateUserArgs

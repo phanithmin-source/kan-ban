@@ -1,5 +1,7 @@
 import boardService from "./board.service.js";
 import prisma from "../../config/prisma.js";
+import { requireAuth } from "../../utils/auth.js";
+import type { GraphQLContext } from "../../graphql/context.js";
 
 import type {
   CreateBoardArgs,
@@ -19,10 +21,16 @@ export const boardResolvers = {
   Mutation: {
     createBoard: (
       _parent: unknown,
-      { input }: CreateBoardArgs
-    ) =>
-      // Temporary ownerId until authentication is implemented
-      boardService.createBoard(input.name, 1),
+      { input }: CreateBoardArgs,
+      context: GraphQLContext
+      ) => {
+      const user = requireAuth(context);
+
+      return boardService.createBoard(
+        input.name,
+        user.id
+      );
+    },
 
     updateBoard: (
       _parent: unknown,

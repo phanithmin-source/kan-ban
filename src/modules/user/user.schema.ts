@@ -1,4 +1,4 @@
-export const userTypeDefs =`#graphql
+export const userTypeDefs = `#graphql
   type User {
     id: ID!
     name: String!
@@ -17,12 +17,6 @@ export const userTypeDefs =`#graphql
     USER
   }
 
-  input CreateUserInput {
-    name: String!
-    email: String!
-    password: String!
-  }
-
   input UpdateUserInput {
     name: String
     email: String
@@ -31,17 +25,14 @@ export const userTypeDefs =`#graphql
   extend type Query {
     users: [User!]!
     user(id: ID!): User
-    
-    me: User
-
   }
 
   extend type Mutation {
-    createUser(input: CreateUserInput!): User!
     updateUser(
       id: ID!
       input: UpdateUserInput!
     ): User!
+
     deleteUser(id: ID!): Boolean!
   }
 `;

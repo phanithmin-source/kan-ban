@@ -1,15 +1,12 @@
-import bcrypt from "bcrypt";
 import { ZodError } from "zod";
 
 import userRepository from "./user.repository.js";
 
 import {
-  createUserSchema,
   updateUserSchema,
 } from "./user.validation.js";
 
 import type {
-  CreateUserInput,
   UpdateUserInput,
 } from "./dto/user.dto.js";
 
@@ -31,41 +28,6 @@ class UserService {
     }
 
     return user;
-  }
-
-  async createUser(input: CreateUserInput) {
-    try {
-      const data = createUserSchema.parse(input);
-
-      const existingUser = await userRepository.findByEmail(
-        data.email
-      );
-
-      if (existingUser) {
-        throw new BadRequestError(
-          "Email already exists"
-        );
-      }
-
-      const hashedPassword = await bcrypt.hash(
-        data.password,
-        10
-      );
-
-      return userRepository.create({
-        name: data.name,
-        email: data.email,
-        password: hashedPassword,
-      });
-    } catch (error) {
-      if (error instanceof ZodError) {
-        throw new BadRequestError(
-          error.issues[0].message
-        );
-      }
-
-      throw error;
-    }
   }
 
   async updateUser(
