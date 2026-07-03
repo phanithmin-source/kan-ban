@@ -1,7 +1,11 @@
 import prisma from "../../config/prisma.js";
-import { Prisma } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 
 class BoardRepository {
+  /**
+   * Internal use.
+   * Returns all boards.
+   */
   findAll() {
     return prisma.board.findMany({
       include: {
@@ -14,9 +18,71 @@ class BoardRepository {
     });
   }
 
+  /**
+   * RBAC.
+   * ADMIN -> all boards
+   * Others -> only their own boards
+   */
+  findAllAccessible(
+    userId: number,
+    role: Role
+  ) {
+    return prisma.board.findMany({
+      where:
+        role === "ADMIN"
+          ? {}
+          : {
+              ownerId: userId,
+            },
+
+      include: {
+        owner: true,
+        tasks: true,
+      },
+
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
+  }
+
+  /**
+   * Internal use.
+   * Find board regardless of owner.
+   */
   findById(id: number) {
     return prisma.board.findUnique({
-      where: { id },
+      where: {
+        id,
+      },
+      include: {
+        owner: true,
+        tasks: true,
+      },
+    });
+  }
+
+  /**
+   * RBAC.
+   * ADMIN -> any board
+   * Others -> only their own board
+   */
+  findAccessibleById(
+    id: number,
+    userId: number,
+    role: Role
+  ) {
+    return prisma.board.findFirst({
+      where: {
+        id,
+
+        ...(role === "ADMIN"
+          ? {}
+          : {
+              ownerId: userId,
+            }),
+      },
+
       include: {
         owner: true,
         tasks: true,
@@ -31,12 +97,14 @@ class BoardRepository {
     return prisma.board.create({
       data: {
         name: data.name,
+
         owner: {
           connect: {
             id: data.ownerId,
           },
         },
       },
+
       include: {
         owner: true,
         tasks: true,
@@ -49,8 +117,12 @@ class BoardRepository {
     data: Prisma.BoardUpdateInput
   ) {
     return prisma.board.update({
-      where: { id },
+      where: {
+        id,
+      },
+
       data,
+
       include: {
         owner: true,
         tasks: true,
@@ -60,7 +132,9 @@ class BoardRepository {
 
   delete(id: number) {
     return prisma.board.delete({
-      where: { id },
+      where: {
+        id,
+      },
     });
   }
 }

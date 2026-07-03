@@ -41,7 +41,9 @@ class BoardService {
       });
     } catch (error) {
       if (error instanceof ZodError) {
-        throw new BadRequestError(error.issues[0].message);
+        throw new BadRequestError(
+          error.issues[0].message
+        );
       }
 
       throw error;
@@ -68,7 +70,9 @@ class BoardService {
       });
     } catch (error) {
       if (error instanceof ZodError) {
-        throw new BadRequestError(error.issues[0].message);
+        throw new BadRequestError(
+          error.issues[0].message
+        );
       }
 
       throw error;

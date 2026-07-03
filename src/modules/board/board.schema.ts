@@ -17,7 +17,6 @@ extend type Query {
 
 input CreateBoardInput {
   name: String!
-  ownerId: ID!
 }
 
 input UpdateBoardInput {

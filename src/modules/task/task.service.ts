@@ -19,6 +19,7 @@ import type {
 import {
   BadRequestError,
   NotFoundError,
+  ForbiddenError,
 } from "../../utils/errors.js";
 
 class TaskService {
@@ -52,40 +53,40 @@ class TaskService {
   }
 
   async createTask(input: CreateTaskInput) {
-  try {
-    const data = createTaskSchema.parse(input);
+    try {
+      const data = createTaskSchema.parse(input);
 
-    // Verify board exists
-    const board = await boardRepository.findById(data.boardId);
+      // Verify board exists
+      const board = await boardRepository.findById(data.boardId);
 
-    if (!board) {
-      throw new NotFoundError("Board not found");
-    }
+      if (!board) {
+        throw new NotFoundError("Board not found");
+      }
 
-    return taskRepository.create({
-      title: data.title,
-      description: data.description,
-      status: data.status,
-      priority: data.priority,
+      return taskRepository.create({
+        title: data.title,
+        description: data.description,
+        status: data.status,
+        priority: data.priority,
 
-      dueDate: data.dueDate
-        ? new Date(data.dueDate)
-        : null,
+        dueDate: data.dueDate
+          ? new Date(data.dueDate)
+          : null,
 
-      board: {
-        connect: {
-          id: data.boardId,
+        board: {
+          connect: {
+            id: data.boardId,
+          },
         },
-      },
-    });
-  } catch (error) {
-    if (error instanceof ZodError) {
-      throw new BadRequestError(error.issues[0].message);
-    }
+      });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw new BadRequestError(error.issues[0].message);
+      }
 
-    throw error;
+      throw error;
+    }
   }
-}
 
   async updateTask(id: number, input: UpdateTaskInput) {
     const task = await taskRepository.findById(id);
@@ -118,23 +119,50 @@ class TaskService {
     });
   }
 
-  async assignTask(taskId: number, userId: number) {
-  const task = await taskRepository.findById(taskId);
+  async assignTask(
+    taskId: number,
+    userId: number,
+    currentUser: {
+      id: number;
+      role: "ADMIN" | "MANAGER" | "USER";
+    }
+  ) {
+    const task = await taskRepository.findById(taskId);
 
-  if (!task) {
-    throw new NotFoundError("Task not found");
+    if (!task) {
+      throw new NotFoundError("Task not found");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundError("User not found");
+    }
+
+    if (currentUser.role !== "ADMIN") {
+      const accessibleTask =
+        await taskRepository.findAccessibleById(
+          taskId,
+          currentUser.id,
+          currentUser.role
+        );
+
+      if (!accessibleTask) {
+        throw new ForbiddenError(
+          "You do not have permission"
+        );
+      }
+    }
+
+    return taskRepository.assignTask(
+      taskId,
+      userId
+    );
   }
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
-
-  if (!user) {
-    throw new NotFoundError("User not found");
-  }
-
-  return taskRepository.assignTask(taskId, userId);
-}
 }
 
 export default new TaskService();

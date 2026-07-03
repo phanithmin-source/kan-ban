@@ -1,13 +1,14 @@
 import prisma from "../../config/prisma.js";
 
 import taskService from "./task.service.js";
+import taskRepository from "./task.repository.js";
 
 import {
   requireAuth,
   requireRole,
 } from "../../utils/auth.js";
 
-import { ForbiddenError } from "../../utils/errors.js";
+import { ForbiddenError, NotFoundError } from "../../utils/errors.js";
 import type { GraphQLContext } from "../../graphql/context.js";
 
 import type {
@@ -27,20 +28,36 @@ export const taskResolvers = {
       { filter }: { filter?: TaskFilter },
       context: GraphQLContext
     ) => {
-      requireAuth(context);
+      const user = requireAuth(context);
 
-      return taskService.getTasks(filter ?? {});
+      return taskRepository.findAllAccessible(
+        user.id,
+        user.role,
+        filter ?? {}
+      );
     },
 
-    task: (
+    task: async (
       _parent: unknown,
       { id }: GetTaskArgs,
       context: GraphQLContext
     ) => {
-      requireAuth(context);
+      const user = requireAuth(context);
 
-      return taskService.getTaskById(Number(id));
+      const task =
+        await taskRepository.findAccessibleById(
+          Number(id),
+          user.id,
+          user.role
+        );
+
+      if (!task) {
+        throw new NotFoundError("Task not found");
+      }
+
+      return task;
     },
+
   },
 
   Mutation: {
@@ -54,18 +71,13 @@ export const taskResolvers = {
       return taskService.createTask(input);
     },
 
-    updateTask: async (
+    updateTask: (
       _parent: unknown,
       { id, input }: UpdateTaskArgs,
       context: GraphQLContext
     ) => {
       const user = requireAuth(context);
 
-      const task = await taskService.getTaskById(Number(id));
-
-      // Admin can update everything.
-      // Managers can update everything.
-      // Users can only update tasks assigned to them (we'll fully support this after assignee is added).
       if (
         user.role !== "ADMIN" &&
         user.role !== "MANAGER"
@@ -93,14 +105,12 @@ export const taskResolvers = {
       return true;
     },
 
-    updateTaskStatus: async (
+    updateTaskStatus: (
       _parent: unknown,
       { id, status }: UpdateTaskStatusArgs,
       context: GraphQLContext
     ) => {
       const user = requireAuth(context);
-
-      const task = await taskService.getTaskById(Number(id));
 
       if (
         user.role !== "ADMIN" &&
@@ -117,23 +127,28 @@ export const taskResolvers = {
       );
     },
 
-    assignTask: async (
+    assignTask: (
       _parent: unknown,
-      { taskId, userId }: { taskId: string; userId: string },
+      {
+        taskId,
+        userId,
+      }: {
+        taskId: string;
+        userId: string;
+      },
       context: GraphQLContext
     ) => {
-      const user = requireAuth(context);
-
-      if (user.role !== "ADMIN" && user.role !== "MANAGER") {
-        throw new ForbiddenError("You do not have permission");
-      }
+      const user = requireRole(context, [
+        "ADMIN",
+        "MANAGER",
+      ]);
 
       return taskService.assignTask(
         Number(taskId),
-        Number(userId)
+        Number(userId),
+        user
       );
     },
-
   },
 
   Task: {
@@ -144,12 +159,20 @@ export const taskResolvers = {
         },
       }),
 
-    assignee: (parent: { assigneeId: number }) =>
-      prisma.user.findUnique({
-        where: {
-          id: parent.assigneeId ,
-        },
-      }),
-  },
+    assignee: (
+      parent: {
+        assigneeId: number | null;
+      }
+    ) => {
+      if (!parent.assigneeId) {
+        return null;
+      }
 
+      return prisma.user.findUnique({
+        where: {
+          id: parent.assigneeId,
+        },
+      });
+    },
+  },
 };

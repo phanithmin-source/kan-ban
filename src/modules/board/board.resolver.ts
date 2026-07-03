@@ -1,5 +1,6 @@
 import boardService from "./board.service.js";
 import prisma from "../../config/prisma.js";
+import boardRepository from "./board.repository.js";
 
 import {
   requireAuth,
@@ -23,19 +24,35 @@ export const boardResolvers = {
       _args: unknown,
       context: GraphQLContext
     ) => {
-      requireAuth(context);
+      const user = requireAuth(context);
 
-      return boardService.getBoards();
+      return boardRepository.findAllAccessible(
+        user.id,
+        user.role
+      );
     },
 
-    board: (
+    board: async (
       _parent: unknown,
       { id }: GetBoardArgs,
       context: GraphQLContext
     ) => {
-      requireAuth(context);
+      const user = requireAuth(context);
 
-      return boardService.getBoardById(Number(id));
+      const board =
+        await boardRepository.findAccessibleById(
+          Number(id),
+          user.id,
+          user.role
+        );
+
+      if (!board) {
+        throw new ForbiddenError(
+          "Board not found or access denied"
+        );
+      }
+
+      return board;
     },
   },
 

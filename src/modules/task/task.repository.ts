@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 
 import prisma from "../../config/prisma.js";
 import type { TaskFilter } from "./task.types.js";
@@ -46,6 +46,10 @@ class TaskRepository {
     };
   }
 
+  /**
+   * Internal use.
+   * Returns all tasks.
+   */
   async findAll(filter: TaskFilter) {
     const page = filter.page ?? 1;
     const limit = filter.limit ?? 10;
@@ -73,9 +77,79 @@ class TaskRepository {
     };
   }
 
+  /**
+   * RBAC.
+   * ADMIN -> all tasks
+   * Others -> only tasks in boards they own
+   */
+  async findAllAccessible(
+    userId: number,
+    role: Role,
+    filter: TaskFilter
+  ) {
+    const page = filter.page ?? 1;
+    const limit = filter.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    const where = this.buildWhere(filter);
+
+    if (role !== Role.ADMIN) {
+      where.board = {
+        ownerId: userId,
+      };
+    }
+
+    const orderBy = this.buildOrderBy(filter);
+
+    const [tasks, total] = await Promise.all([
+      prisma.task.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+      }),
+
+      prisma.task.count({
+        where,
+      }),
+    ]);
+
+    return {
+      data: tasks,
+      total,
+    };
+  }
+
+  findAccessibleById(
+    id: number,
+    userId: number,
+    role: Role
+  ) {
+    return prisma.task.findFirst({
+      where: {
+        id,
+
+        ...(role === Role.ADMIN
+          ? {}
+          : {
+            board: {
+              ownerId: userId,
+            },
+          }),
+      },
+
+      include: {
+        board: true,
+        assignee: true,
+      },
+    });
+  }
+
   findById(id: number) {
     return prisma.task.findUnique({
-      where: { id },
+      where: {
+        id,
+      },
     });
   }
 
@@ -85,9 +159,14 @@ class TaskRepository {
     });
   }
 
-  update(id: number, data: Prisma.TaskUpdateInput) {
+  update(
+    id: number,
+    data: Prisma.TaskUpdateInput
+  ) {
     return prisma.task.update({
-      where: { id },
+      where: {
+        id,
+      },
       data,
     });
   }
@@ -116,7 +195,9 @@ class TaskRepository {
 
   delete(id: number) {
     return prisma.task.delete({
-      where: { id },
+      where: {
+        id,
+      },
     });
   }
 }
