@@ -52,7 +52,7 @@ production-ready development practices.
 ## Validation
 
 -   Zod Validation
--   Input Sanitization
+-   GraphQL error mapping
 -   Error Handling
 
 ------------------------------------------------------------------------
@@ -116,7 +116,7 @@ Create `.env` file:
 ``` env
 PORT=4000
 DATABASE_URL="file:./dev.db"
-JWT_SECRET=your_secret_key
+JWT_SECRET=your_secret_key_must_be_at_least_32_characters
 ```
 
 ### 4. Prisma setup
@@ -130,6 +130,12 @@ npx prisma migrate dev
 
 ``` bash
 npm run dev
+```
+
+### 6. Run tests
+
+``` bash
+npm test -- tests/task.service.test.ts
 ```
 
 ------------------------------------------------------------------------

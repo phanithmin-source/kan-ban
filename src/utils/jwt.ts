@@ -7,10 +7,20 @@ export interface JwtPayload {
   role: "ADMIN" | "MANAGER" | "USER";
 }
 
-export function generateToken(payload: JwtPayload) {
+export function generateAccessToken(payload: JwtPayload) {
+  return jwt.sign(payload, env.JWT_SECRET, {
+    expiresIn: "15m",
+  });
+}
+
+export function generateRefreshToken(payload: JwtPayload) {
   return jwt.sign(payload, env.JWT_SECRET, {
     expiresIn: "7d",
   });
+}
+
+export function generateToken(payload: JwtPayload) {
+  return generateAccessToken(payload);
 }
 
 export function verifyToken(token: string) {

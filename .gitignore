@@ -5,5 +5,4 @@ dist/
 build/
 coverage/
 # Prisma SQLite database
-prisma/dev.db
-prisma/dev.db-journal
+prisma/dev.dbsi

@@ -34,13 +34,6 @@ export const userResolvers = {
 
       return userService.getUserById(Number(id));
     },
-
-    me: (
-      _parent: unknown,
-      _args: unknown,
-      context: GraphQLContext
-    ) => requireAuth(context),
-
   },
 
   Mutation: {

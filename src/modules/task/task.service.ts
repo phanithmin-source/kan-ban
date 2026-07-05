@@ -88,19 +88,45 @@ class TaskService {
     }
   }
 
-  async updateTask(id: number, input: UpdateTaskInput) {
+  async updateTask(
+    id: number,
+    input: UpdateTaskInput,
+    currentUser?: {
+      id: number;
+      role: "ADMIN" | "MANAGER" | "USER";
+    }
+  ) {
     const task = await taskRepository.findById(id);
 
     if (!task) {
       throw new NotFoundError("Task not found");
     }
 
-    const data = updateTaskSchema.parse(input);
+    if (
+      currentUser &&
+      currentUser.role !== "ADMIN" &&
+      currentUser.role !== "MANAGER" &&
+      task.assigneeId !== currentUser.id
+    ) {
+      throw new ForbiddenError(
+        "You do not have permission"
+      );
+    }
 
-    return taskRepository.update(id, {
-      ...data,
-      dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
-    });
+    try {
+      const data = updateTaskSchema.parse(input);
+
+      return taskRepository.update(id, {
+        ...data,
+        dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+      });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        throw new BadRequestError(error.issues[0].message);
+      }
+
+      throw error;
+    }
   }
 
   async deleteTask(id: number) {

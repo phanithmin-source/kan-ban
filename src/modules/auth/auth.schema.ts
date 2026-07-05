@@ -1,8 +1,13 @@
 export const authTypeDefs = `#graphql
 
 type AuthPayload {
-  token: String!
+  accessToken: String!
+  refreshToken: String!
   user: User!
+}
+
+type RefreshTokenPayload {
+  accessToken: String!
 }
 
 input RegisterInput {
@@ -31,5 +36,7 @@ extend type Mutation {
   login(input: LoginInput!): AuthPayload!
 
   logout: LogoutPayload!
+
+  refreshToken(token: String!): RefreshTokenPayload!
 }
 `;
