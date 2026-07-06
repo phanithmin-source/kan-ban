@@ -2,15 +2,23 @@ import bcrypt from "bcrypt";
 import { ZodError } from "zod";
 
 import authRepository from "./auth.repository.js";
+import refreshTokenRepository from "./refresh-token.repository.js";
 
 import {
   loginSchema,
   registerSchema,
 } from "./auth.validation.js";
 
-import { generateToken } from "../../utils/jwt.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyToken,
+} from "../../utils/jwt.js";
 
-import { BadRequestError } from "../../utils/errors.js";
+import {
+  BadRequestError,
+  UnauthorizedError,
+} from "../../utils/errors.js";
 
 import type { LoginInput } from "./dto/login.dto.js";
 import type { RegisterInput } from "./dto/register.dto.js";
@@ -40,14 +48,31 @@ class AuthService {
         password: hashedPassword,
       });
 
-      const token = generateToken({
+      const accessToken = generateAccessToken({
         id: user.id,
         email: user.email,
         role: user.role,
       });
 
+      const refreshToken = generateRefreshToken({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      });
+
+      const expiresAt = new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000
+      );
+
+      await refreshTokenRepository.create(
+        refreshToken,
+        user.id,
+        expiresAt
+      );
+
       return {
-        token,
+        accessToken,
+        refreshToken,
         user,
       };
     } catch (error) {
@@ -86,14 +111,31 @@ class AuthService {
         );
       }
 
-      const token = generateToken({
+      const accessToken = generateAccessToken({
         id: user.id,
         email: user.email,
         role: user.role,
       });
 
+      const refreshToken = generateRefreshToken({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+      });
+
+      const expiresAt = new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000
+      );
+
+      await refreshTokenRepository.create(
+        refreshToken,
+        user.id,
+        expiresAt
+      );
+
       return {
-        token,
+        accessToken,
+        refreshToken,
         user,
       };
     } catch (error) {
@@ -107,12 +149,48 @@ class AuthService {
     }
   }
 
-  logout() {
+  async logout(userId: number) {
+    await refreshTokenRepository.deleteByUserId(
+      userId
+    );
+
     return {
       success: true,
-      message: "Logged out successfully",
-  };
-}
+      message: "Logged out successfully.",
+    };
+  }
+
+  async refreshAccessToken(refreshToken: string) {
+    try {
+      const decoded = verifyToken(refreshToken);
+
+      const storedToken =
+        await refreshTokenRepository.findByToken(
+          refreshToken
+        );
+
+      if (
+        !storedToken ||
+        storedToken.expiresAt < new Date()
+      ) {
+        throw new UnauthorizedError(
+          "Refresh token is invalid or expired"
+        );
+      }
+
+      const accessToken = generateAccessToken({
+        id: decoded.id,
+        email: decoded.email,
+        role: decoded.role,
+      });
+
+      return { accessToken };
+    } catch (error) {
+      throw new UnauthorizedError(
+        "Refresh token is invalid or expired"
+      );
+    }
+  }
 }
 
 export default new AuthService();

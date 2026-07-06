@@ -137,11 +137,6 @@ class TaskRepository {
             },
           }),
       },
-
-      include: {
-        board: true,
-        assignee: true,
-      },
     });
   }
 
@@ -185,10 +180,6 @@ class TaskRepository {
             id: userId,
           },
         },
-      },
-      include: {
-        board: true,
-        assignee: true,
       },
     });
   }

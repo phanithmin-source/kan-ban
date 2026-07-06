@@ -1,5 +1,3 @@
-import prisma from "../../config/prisma.js";
-
 import taskService from "./task.service.js";
 import taskRepository from "./task.repository.js";
 
@@ -89,7 +87,8 @@ export const taskResolvers = {
 
       return taskService.updateTask(
         Number(id),
-        input
+        input,
+        user
       );
     },
 
@@ -152,27 +151,10 @@ export const taskResolvers = {
   },
 
   Task: {
-    board: (parent: { boardId: number }) =>
-      prisma.board.findUnique({
-        where: {
-          id: parent.boardId,
-        },
-      }),
+    board: (parent: { boardId: number }, _args: unknown, context: GraphQLContext) =>
+      context.loaders.boardLoader.load(parent.boardId),
 
-    assignee: (
-      parent: {
-        assigneeId: number | null;
-      }
-    ) => {
-      if (!parent.assigneeId) {
-        return null;
-      }
-
-      return prisma.user.findUnique({
-        where: {
-          id: parent.assigneeId,
-        },
-      });
-    },
+    assignee: (parent: { assigneeId: number | null }, _args: unknown, context: GraphQLContext) =>
+      context.loaders.taskAssigneeLoader.load(parent.assigneeId),
   },
 };

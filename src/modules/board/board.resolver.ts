@@ -1,5 +1,4 @@
 import boardService from "./board.service.js";
-import prisma from "../../config/prisma.js";
 import boardRepository from "./board.repository.js";
 
 import {
@@ -126,21 +125,10 @@ export const boardResolvers = {
   },
 
   Board: {
-    tasks: (parent: { id: number }) =>
-      prisma.task.findMany({
-        where: {
-          boardId: parent.id,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      }),
+    owner: (parent: { ownerId: number }, _args: unknown, context: GraphQLContext) =>
+      context.loaders.boardOwnerLoader.load(parent.ownerId),
 
-    owner: (parent: { ownerId: number }) =>
-      prisma.user.findUnique({
-        where: {
-          id: parent.ownerId,
-        },
-      }),
+    tasks: (parent: { id: number }, _args: unknown, context: GraphQLContext) =>
+      context.loaders.boardTasksLoader.load(parent.id),
   },
 };

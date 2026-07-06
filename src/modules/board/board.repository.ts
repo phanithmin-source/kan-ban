@@ -8,10 +8,6 @@ class BoardRepository {
    */
   findAll() {
     return prisma.board.findMany({
-      include: {
-        owner: true,
-        tasks: true,
-      },
       orderBy: {
         createdAt: "asc",
       },
@@ -35,11 +31,6 @@ class BoardRepository {
               ownerId: userId,
             },
 
-      include: {
-        owner: true,
-        tasks: true,
-      },
-
       orderBy: {
         createdAt: "asc",
       },
@@ -54,10 +45,6 @@ class BoardRepository {
     return prisma.board.findUnique({
       where: {
         id,
-      },
-      include: {
-        owner: true,
-        tasks: true,
       },
     });
   }
@@ -81,11 +68,6 @@ class BoardRepository {
           : {
               ownerId: userId,
             }),
-      },
-
-      include: {
-        owner: true,
-        tasks: true,
       },
     });
   }

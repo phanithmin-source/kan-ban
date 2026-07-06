@@ -30,9 +30,14 @@ export const authResolvers = {
       _args: unknown,
       context: GraphQLContext
     ) => {
-      requireAuth(context);
+      const user = requireAuth(context);
 
-      return authService.logout();
+      return authService.logout(user.id);
     },
+
+    refreshToken: (
+      _parent: unknown,
+      { token }: { token: string }
+    ) => authService.refreshAccessToken(token),
   },
 };
