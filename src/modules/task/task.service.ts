@@ -5,11 +5,8 @@ import taskRepository from "./task.repository.js";
 import boardRepository from "../board/board.repository.js";
 import { createTaskSchema, updateTaskSchema } from "./task.validation.js";
 import prisma from "../../config/prisma.js";
+import type { CreateTaskInput , UpdateTaskInput } from "../../generated/schema.js";
 
-import type {
-  CreateTaskInput,
-  UpdateTaskInput,
-} from "./dto/task.dto.js";
 
 import type {
   TaskConnection,

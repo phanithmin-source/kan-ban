@@ -1,34 +1,37 @@
 import authService from "./auth.service.js";
+
 import { requireAuth } from "../../utils/auth.js";
 
-import type { GraphQLContext } from "../../graphql/context.js";
-import type { LoginArgs } from "./dto/login.dto.js";
-import type { RegisterArgs } from "./dto/register.dto.js";
+import type { Resolvers } from "../../generated/resolvers.js";
 
-export const authResolvers = {
+
+export const authResolvers: Pick<
+  Resolvers,
+  "Query" | "Mutation"
+> = {
   Query: {
     me: (
-      _parent: unknown,
-      _args: unknown,
-      context: GraphQLContext
+      _parent,
+      _args,
+      context
     ) => requireAuth(context),
   },
 
   Mutation: {
     register: (
-      _parent: unknown,
-      { input }: RegisterArgs
+      _parent,
+      { input }
     ) => authService.register(input),
 
     login: (
-      _parent: unknown,
-      { input }: LoginArgs
+      _parent,
+      { input }
     ) => authService.login(input),
 
     logout: (
-      _parent: unknown,
-      _args: unknown,
-      context: GraphQLContext
+      _parent,
+      _args,
+      context
     ) => {
       const user = requireAuth(context);
 
@@ -36,8 +39,8 @@ export const authResolvers = {
     },
 
     refreshToken: (
-      _parent: unknown,
-      { token }: { token: string }
+      _parent,
+      { token }
     ) => authService.refreshAccessToken(token),
   },
 };

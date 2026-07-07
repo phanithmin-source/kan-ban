@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 
 import authRepository from "./auth.repository.js";
 import refreshTokenRepository from "./refresh-token.repository.js";
+import type { RegisterInput, LoginInput } from "../../generated/schema.js";
 
 import {
   loginSchema,
@@ -20,8 +21,6 @@ import {
   UnauthorizedError,
 } from "../../utils/errors.js";
 
-import type { LoginInput } from "./dto/login.dto.js";
-import type { RegisterInput } from "./dto/register.dto.js";
 
 class AuthService {
   async register(input: RegisterInput) {

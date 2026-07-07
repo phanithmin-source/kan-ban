@@ -20,14 +20,26 @@ export const taskResolvers: Pick<
   "Query" | "Mutation" | "Task"
 > = {
   Query: {
-    tasks: (_parent, { filter }, context) => {
+    tasks: async  (_parent, { filter }, context) => {
       const user = requireAuth(context);
+      
+      const page = filter?.page ?? 1;
+      const limit = filter?.limit ?? 10;
 
-      return taskRepository.findAllAccessible(
+      const result =
+      await taskRepository.findAllAccessible(
         user.id,
         user.role,
         (filter ?? {}) as TaskFilter
       );
+      return {
+          data: result.data,
+          total: result.total,
+          page,
+          limit,
+          totalPages: Math.ceil(result.total / limit),
+    };
+
     },
 
     task: async (_parent, { id }, context) => {
@@ -50,10 +62,13 @@ export const taskResolvers: Pick<
 
   Mutation: {
     createTask: (_parent, { input }, context) => {
-      requireRole(context, ["ADMIN", "MANAGER"]);
-
-      return taskService.createTask(input);
-    },
+    requireRole(context, ["ADMIN", "MANAGER"]);
+    return taskService.createTask({
+      ...input,
+      description: input.description ?? undefined,
+      dueDate: input.dueDate ?? undefined,
+  });
+},
 
     updateTask: (_parent, { id, input }, context) => {
       const user = requireAuth(context);
@@ -69,7 +84,14 @@ export const taskResolvers: Pick<
 
       return taskService.updateTask(
         id,
-        input,
+        {
+          ...input,
+          title: input.title ?? undefined,
+          description: input.description ?? undefined,
+          status: input.status ?? undefined,
+          priority: input.priority ?? undefined,
+          dueDate: input.dueDate ?? undefined,
+        },
         user
       );
     },
@@ -123,10 +145,17 @@ export const taskResolvers: Pick<
   },
 
   Task: {
-    board: (parent, _args, context) =>
-      context.loaders.boardLoader.load(
+    board: async (parent, _args, context) => {
+    const board =
+      await context.loaders.boardLoader.load(
         parent.boardId
-      ),
+      );
+
+    if (!board) {
+      throw new NotFoundError("Board not found");
+    }
+    return board;
+  },
 
     assignee: (parent, _args, context) =>
       context.loaders.taskAssigneeLoader.load(
