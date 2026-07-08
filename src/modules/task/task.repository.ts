@@ -7,9 +7,16 @@ class TaskRepository {
   private buildWhere(filter: TaskFilter): Prisma.TaskWhereInput {
     const where: Prisma.TaskWhereInput = {};
 
+    where.archived = false;
+
+    if (filter.boardId) {
+      where.boardId = filter.boardId;
+    }
+
     if (filter.search) {
       where.title = {
         contains: filter.search,
+        mode: "insensitive",
       };
     }
 
@@ -79,8 +86,8 @@ class TaskRepository {
 
   /**
    * RBAC.
-   * ADMIN -> all tasks
-   * Others -> only tasks in boards they own
+   * ADMIN -> all active tasks
+   * Others -> only tasks in boards they are members of
    */
   async findAllAccessible(
     userId: number,
@@ -94,10 +101,11 @@ class TaskRepository {
     const where = this.buildWhere(filter);
 
     if (role !== Role.ADMIN) {
-      where.OR = [
-        { board: { ownerId: userId } },
-        { assigneeId: userId },
-      ];
+      where.board = {
+        members: {
+          some: { userId },
+        },
+      };
     }
 
     const orderBy = this.buildOrderBy(filter);
@@ -129,14 +137,14 @@ class TaskRepository {
     return prisma.task.findFirst({
       where: {
         id,
-
         ...(role === Role.ADMIN
           ? {}
           : {
-              OR: [
-                { board: { ownerId: userId } },
-                { assigneeId: userId },
-              ],
+              board: {
+                members: {
+                  some: { userId },
+                },
+              },
             }),
       },
     });
@@ -150,7 +158,15 @@ class TaskRepository {
     });
   }
 
-  create(data: Prisma.TaskCreateInput) {
+  create(data: {
+    title: string;
+    description?: string;
+    status: Prisma.TaskCreateInput["status"];
+    priority: Prisma.TaskCreateInput["priority"];
+    dueDate?: Date | null;
+    board: Prisma.BoardCreateNestedOneWithoutTasksInput;
+    creator: Prisma.UserCreateNestedOneWithoutCreatedTasksInput;
+  }) {
     return prisma.task.create({
       data,
     });
@@ -188,6 +204,54 @@ class TaskRepository {
 
   delete(id: number) {
     return prisma.task.delete({
+      where: {
+        id,
+      },
+    });
+  }
+
+  // Comments
+  findCommentById(id: number) {
+    return prisma.comment.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
+
+  addComment(taskId: number, userId: number, content: string) {
+    return prisma.comment.create({
+      data: {
+        content,
+        task: {
+          connect: { id: taskId },
+        },
+        user: {
+          connect: { id: userId },
+        },
+      },
+      include: {
+        user: true,
+      },
+    });
+  }
+
+  updateComment(id: number, content: string) {
+    return prisma.comment.update({
+      where: {
+        id,
+      },
+      data: {
+        content,
+      },
+      include: {
+        user: true,
+      },
+    });
+  }
+
+  deleteComment(id: number) {
+    return prisma.comment.delete({
       where: {
         id,
       },

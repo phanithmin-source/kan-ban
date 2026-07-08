@@ -1,7 +1,7 @@
 import prisma from "../config/prisma.js";
 import DataLoader from "dataloader";
 
-import type { User, Board, Task } from "@prisma/client";
+import type { User, Board, Task, BoardMember, Comment } from "@prisma/client";
 import type { Request } from "express";
 
 import { verifyToken } from "../utils/jwt.js";
@@ -17,6 +17,9 @@ export interface GraphQLContext {
     boardOwnerLoader: DataLoader<number, User | null>;
     taskAssigneeLoader: DataLoader<number | null, User | null>;
     userBoardsLoader: DataLoader<number, Board[]>;
+    taskCreatorLoader: DataLoader<number, User | null>;
+    taskCommentsLoader: DataLoader<number, Comment[]>;
+    boardMembersLoader: DataLoader<number, BoardMember[]>;
   };
 }
 
@@ -102,6 +105,43 @@ const createUserBoardsLoader = () =>
     return userIds.map((id) => boardsByUser.get(id) || []);
   });
 
+const createTaskCreatorLoader = () =>
+  new DataLoader<number, User | null>(async (creatorIds) => {
+    const users = await prisma.user.findMany({
+      where: { id: { in: creatorIds as number[] } },
+    });
+    const userMap = new Map(users.map((u) => [u.id, u]));
+    return creatorIds.map((id) => userMap.get(id) || null);
+  });
+
+const createTaskCommentsLoader = () =>
+  new DataLoader<number, Comment[]>(async (taskIds) => {
+    const comments = await prisma.comment.findMany({
+      where: { taskId: { in: taskIds as number[] } },
+      orderBy: { createdAt: "desc" },
+    });
+    const commentsByTask = new Map<number, Comment[]>();
+    taskIds.forEach((id) => commentsByTask.set(id, []));
+    comments.forEach((c) => {
+      commentsByTask.get(c.taskId)?.push(c);
+    });
+    return taskIds.map((id) => commentsByTask.get(id) || []);
+  });
+
+const createBoardMembersLoader = () =>
+  new DataLoader<number, BoardMember[]>(async (boardIds) => {
+    const members = await prisma.boardMember.findMany({
+      where: { boardId: { in: boardIds as number[] } },
+      orderBy: { createdAt: "asc" },
+    });
+    const membersByBoard = new Map<number, BoardMember[]>();
+    boardIds.forEach((id) => membersByBoard.set(id, []));
+    members.forEach((m) => {
+      membersByBoard.get(m.boardId)?.push(m);
+    });
+    return boardIds.map((id) => membersByBoard.get(id) || []);
+  });
+
 export const createContext = async ({
   req,
 }: {
@@ -143,6 +183,9 @@ export const createContext = async ({
       boardOwnerLoader: createBoardOwnerLoader(),
       taskAssigneeLoader: createTaskAssigneeLoader(),
       userBoardsLoader: createUserBoardsLoader(),
+      taskCreatorLoader: createTaskCreatorLoader(),
+      taskCommentsLoader: createTaskCommentsLoader(),
+      boardMembersLoader: createBoardMembersLoader(),
     },
   };
 };

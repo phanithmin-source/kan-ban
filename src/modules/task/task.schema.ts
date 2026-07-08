@@ -1,4 +1,14 @@
 export const taskTypeDefs = `#graphql
+type Comment {
+  id: ID!
+  content: String!
+  taskId: ID!
+  userId: ID!
+  createdAt: String!
+  updatedAt: String!
+  user: User!
+}
+
 type Task {
   id: ID!
   title: String!
@@ -6,12 +16,14 @@ type Task {
   status: TaskStatus!
   priority: TaskPriority!
   dueDate: String
+  isArchived: Boolean!
   createdAt: String!
   updatedAt: String!
 
- board: Board!
- assignee: User
-
+  board: Board!
+  assignee: User
+  creator: User!
+  comments: [Comment!]!
 }
 
 enum TaskStatus {
@@ -49,6 +61,7 @@ input TaskFilterInput {
   search: String
   status: TaskStatus
   priority: TaskPriority
+  boardId: ID
 
   page: Int = 1
   limit: Int = 10
@@ -93,5 +106,14 @@ extend type Mutation {
     taskId: ID!
     userId: ID!
   ): Task!
+
+  # Task Archiving
+  archiveTask(id: ID!): Task!
+  restoreTask(id: ID!): Task!
+
+  # Comments Lifecycle
+  addComment(taskId: ID!, content: String!): Comment!
+  updateComment(id: ID!, content: String!): Comment!
+  deleteComment(id: ID!): Boolean!
 }
 `;

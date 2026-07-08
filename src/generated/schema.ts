@@ -1,6 +1,7 @@
 import { Role } from '@prisma/client';
 import { TaskStatus } from '@prisma/client';
 import { TaskPriority } from '@prisma/client';
+import { BoardRole } from '@prisma/client';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 /** All built-in and custom scalars, mapped to their actual values */
@@ -23,10 +24,34 @@ export type Board = {
   __typename?: 'Board';
   createdAt: Scalars['String']['output'];
   id: Scalars['ID']['output'];
+  isArchived: Scalars['Boolean']['output'];
+  members: Array<BoardMember>;
   name: Scalars['String']['output'];
   owner: User;
   tasks: Array<Task>;
   updatedAt: Scalars['String']['output'];
+};
+
+export type BoardMember = {
+  __typename?: 'BoardMember';
+  boardId: Scalars['ID']['output'];
+  id: Scalars['ID']['output'];
+  role: BoardRole;
+  user: User;
+  userId: Scalars['ID']['output'];
+};
+
+export { BoardRole };
+
+export type Comment = {
+  __typename?: 'Comment';
+  content: Scalars['String']['output'];
+  createdAt: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  taskId: Scalars['ID']['output'];
+  updatedAt: Scalars['String']['output'];
+  user: User;
+  userId: Scalars['ID']['output'];
 };
 
 export type CreateBoardInput = {
@@ -55,20 +80,53 @@ export type LogoutPayload = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  addBoardMember: BoardMember;
+  addComment: Comment;
+  archiveBoard: Board;
+  archiveTask: Task;
   assignTask: Task;
   createBoard: Board;
   createTask: Task;
   deleteBoard: Scalars['Boolean']['output'];
+  deleteComment: Scalars['Boolean']['output'];
   deleteTask: Scalars['Boolean']['output'];
   deleteUser: Scalars['Boolean']['output'];
   login: AuthPayload;
   logout: LogoutPayload;
   refreshToken: RefreshTokenPayload;
   register: AuthPayload;
+  removeBoardMember: Scalars['Boolean']['output'];
+  restoreBoard: Board;
+  restoreTask: Task;
   updateBoard: Board;
+  updateBoardMemberRole: BoardMember;
+  updateComment: Comment;
   updateTask: Task;
   updateTaskStatus: Task;
   updateUser: User;
+};
+
+
+export type MutationAddBoardMemberArgs = {
+  boardId: Scalars['ID']['input'];
+  role: BoardRole;
+  userId: Scalars['ID']['input'];
+};
+
+
+export type MutationAddCommentArgs = {
+  content: Scalars['String']['input'];
+  taskId: Scalars['ID']['input'];
+};
+
+
+export type MutationArchiveBoardArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationArchiveTaskArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -89,6 +147,11 @@ export type MutationCreateTaskArgs = {
 
 
 export type MutationDeleteBoardArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteCommentArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -118,9 +181,38 @@ export type MutationRegisterArgs = {
 };
 
 
+export type MutationRemoveBoardMemberArgs = {
+  boardId: Scalars['ID']['input'];
+  userId: Scalars['ID']['input'];
+};
+
+
+export type MutationRestoreBoardArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationRestoreTaskArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationUpdateBoardArgs = {
   id: Scalars['ID']['input'];
   input: UpdateBoardInput;
+};
+
+
+export type MutationUpdateBoardMemberRoleArgs = {
+  boardId: Scalars['ID']['input'];
+  role: BoardRole;
+  userId: Scalars['ID']['input'];
+};
+
+
+export type MutationUpdateCommentArgs = {
+  content: Scalars['String']['input'];
+  id: Scalars['ID']['input'];
 };
 
 
@@ -194,10 +286,13 @@ export type Task = {
   __typename?: 'Task';
   assignee?: Maybe<User>;
   board: Board;
+  comments: Array<Comment>;
   createdAt: Scalars['String']['output'];
+  creator: User;
   description?: Maybe<Scalars['String']['output']>;
   dueDate?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
+  isArchived: Scalars['Boolean']['output'];
   priority: TaskPriority;
   status: TaskStatus;
   title: Scalars['String']['output'];
@@ -214,6 +309,7 @@ export type TaskConnection = {
 };
 
 export type TaskFilterInput = {
+  boardId?: InputMaybe<Scalars['ID']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   order?: InputMaybe<SortOrder>;
   page?: InputMaybe<Scalars['Int']['input']>;

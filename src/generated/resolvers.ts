@@ -1,10 +1,10 @@
 import type * as Types from "./schema.js";
 import type { GraphQLResolveInfo } from 'graphql';
-import type { User, Board, Task, Role, TaskStatus, TaskPriority } from '@prisma/client';
+import type { User, Board, Task, Comment, BoardMember, Role, TaskStatus, TaskPriority, BoardRole } from '@prisma/client';
 import type { GraphQLContext } from '../graphql/context';
 export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
-export type RequireFields<T, K extends keyof T> = Omit<T, K> & { [P in K]-?: NonNullable<T[P]> };
 export type EnumResolverSignature<T, AllowedValues = any> = { [key in keyof T]?: AllowedValues };
+export type RequireFields<T, K extends keyof T> = Omit<T, K> & { [P in K]-?: NonNullable<T[P]> };
 
 
 export type ResolverTypeWrapper<T> = Promise<T> | T;
@@ -80,7 +80,10 @@ export type DirectiveResolverFn<TResult = Record<PropertyKey, never>, TParent = 
 export type ResolversTypes = {
   AuthPayload: ResolverTypeWrapper<Omit<Types.AuthPayload, 'user'> & { user: ResolversTypes['User'] }>;
   Board: ResolverTypeWrapper<Board>;
+  BoardMember: ResolverTypeWrapper<BoardMember>;
+  BoardRole: BoardRole;
   Boolean: ResolverTypeWrapper<Types.Scalars['Boolean']['output']>;
+  Comment: ResolverTypeWrapper<Comment>;
   CreateBoardInput: Types.CreateBoardInput;
   CreateTaskInput: Types.CreateTaskInput;
   ID: ResolverTypeWrapper<Types.Scalars['ID']['output']>;
@@ -110,7 +113,9 @@ export type ResolversTypes = {
 export type ResolversParentTypes = {
   AuthPayload: Omit<Types.AuthPayload, 'user'> & { user: ResolversParentTypes['User'] };
   Board: Board;
+  BoardMember: BoardMember;
   Boolean: Types.Scalars['Boolean']['output'];
+  Comment: Comment;
   CreateBoardInput: Types.CreateBoardInput;
   CreateTaskInput: Types.CreateTaskInput;
   ID: Types.Scalars['ID']['output'];
@@ -140,10 +145,32 @@ export type AuthPayloadResolvers<ContextType = GraphQLContext, ParentType extend
 export type BoardResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Board'] = ResolversParentTypes['Board']> = {
   createdAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  isArchived?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  members?: Resolver<Array<ResolversTypes['BoardMember']>, ParentType, ContextType>;
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   owner?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
   tasks?: Resolver<Array<ResolversTypes['Task']>, ParentType, ContextType>;
   updatedAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+};
+
+export type BoardMemberResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['BoardMember'] = ResolversParentTypes['BoardMember']> = {
+  boardId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  role?: Resolver<ResolversTypes['BoardRole'], ParentType, ContextType>;
+  user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
+  userId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+};
+
+export type BoardRoleResolvers = EnumResolverSignature<{ MEMBER?: any, OWNER?: any, VIEWER?: any }, ResolversTypes['BoardRole']>;
+
+export type CommentResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Comment'] = ResolversParentTypes['Comment']> = {
+  content?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  taskId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  updatedAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  user?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
+  userId?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
 };
 
 export type LogoutPayloadResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['LogoutPayload'] = ResolversParentTypes['LogoutPayload']> = {
@@ -152,17 +179,27 @@ export type LogoutPayloadResolvers<ContextType = GraphQLContext, ParentType exte
 };
 
 export type MutationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
+  addBoardMember?: Resolver<ResolversTypes['BoardMember'], ParentType, ContextType, RequireFields<Types.MutationAddBoardMemberArgs, 'boardId' | 'role' | 'userId'>>;
+  addComment?: Resolver<ResolversTypes['Comment'], ParentType, ContextType, RequireFields<Types.MutationAddCommentArgs, 'content' | 'taskId'>>;
+  archiveBoard?: Resolver<ResolversTypes['Board'], ParentType, ContextType, RequireFields<Types.MutationArchiveBoardArgs, 'id'>>;
+  archiveTask?: Resolver<ResolversTypes['Task'], ParentType, ContextType, RequireFields<Types.MutationArchiveTaskArgs, 'id'>>;
   assignTask?: Resolver<ResolversTypes['Task'], ParentType, ContextType, RequireFields<Types.MutationAssignTaskArgs, 'taskId' | 'userId'>>;
   createBoard?: Resolver<ResolversTypes['Board'], ParentType, ContextType, RequireFields<Types.MutationCreateBoardArgs, 'input'>>;
   createTask?: Resolver<ResolversTypes['Task'], ParentType, ContextType, RequireFields<Types.MutationCreateTaskArgs, 'input'>>;
   deleteBoard?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<Types.MutationDeleteBoardArgs, 'id'>>;
+  deleteComment?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<Types.MutationDeleteCommentArgs, 'id'>>;
   deleteTask?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<Types.MutationDeleteTaskArgs, 'id'>>;
   deleteUser?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<Types.MutationDeleteUserArgs, 'id'>>;
   login?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<Types.MutationLoginArgs, 'input'>>;
   logout?: Resolver<ResolversTypes['LogoutPayload'], ParentType, ContextType>;
   refreshToken?: Resolver<ResolversTypes['RefreshTokenPayload'], ParentType, ContextType, RequireFields<Types.MutationRefreshTokenArgs, 'token'>>;
   register?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<Types.MutationRegisterArgs, 'input'>>;
+  removeBoardMember?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<Types.MutationRemoveBoardMemberArgs, 'boardId' | 'userId'>>;
+  restoreBoard?: Resolver<ResolversTypes['Board'], ParentType, ContextType, RequireFields<Types.MutationRestoreBoardArgs, 'id'>>;
+  restoreTask?: Resolver<ResolversTypes['Task'], ParentType, ContextType, RequireFields<Types.MutationRestoreTaskArgs, 'id'>>;
   updateBoard?: Resolver<ResolversTypes['Board'], ParentType, ContextType, RequireFields<Types.MutationUpdateBoardArgs, 'id' | 'input'>>;
+  updateBoardMemberRole?: Resolver<ResolversTypes['BoardMember'], ParentType, ContextType, RequireFields<Types.MutationUpdateBoardMemberRoleArgs, 'boardId' | 'role' | 'userId'>>;
+  updateComment?: Resolver<ResolversTypes['Comment'], ParentType, ContextType, RequireFields<Types.MutationUpdateCommentArgs, 'content' | 'id'>>;
   updateTask?: Resolver<ResolversTypes['Task'], ParentType, ContextType, RequireFields<Types.MutationUpdateTaskArgs, 'id' | 'input'>>;
   updateTaskStatus?: Resolver<ResolversTypes['Task'], ParentType, ContextType, RequireFields<Types.MutationUpdateTaskStatusArgs, 'id' | 'status'>>;
   updateUser?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<Types.MutationUpdateUserArgs, 'id' | 'input'>>;
@@ -187,10 +224,13 @@ export type RoleResolvers = EnumResolverSignature<{ ADMIN?: any, MANAGER?: any, 
 export type TaskResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Task'] = ResolversParentTypes['Task']> = {
   assignee?: Resolver<Types.Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   board?: Resolver<ResolversTypes['Board'], ParentType, ContextType>;
+  comments?: Resolver<Array<ResolversTypes['Comment']>, ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  creator?: Resolver<ResolversTypes['User'], ParentType, ContextType>;
   description?: Resolver<Types.Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   dueDate?: Resolver<Types.Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  isArchived?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   priority?: Resolver<ResolversTypes['TaskPriority'], ParentType, ContextType>;
   status?: Resolver<ResolversTypes['TaskStatus'], ParentType, ContextType>;
   title?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -222,6 +262,9 @@ export type UserResolvers<ContextType = GraphQLContext, ParentType extends Resol
 export type Resolvers<ContextType = GraphQLContext> = {
   AuthPayload?: AuthPayloadResolvers<ContextType>;
   Board?: BoardResolvers<ContextType>;
+  BoardMember?: BoardMemberResolvers<ContextType>;
+  BoardRole?: BoardRoleResolvers;
+  Comment?: CommentResolvers<ContextType>;
   LogoutPayload?: LogoutPayloadResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;

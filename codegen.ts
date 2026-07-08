@@ -19,6 +19,7 @@ const config: CodegenConfig = {
           Role: "@prisma/client#Role",
           TaskStatus: "@prisma/client#TaskStatus",
           TaskPriority: "@prisma/client#TaskPriority",
+          BoardRole: "@prisma/client#BoardRole",
         },
       },
     },
@@ -36,6 +37,8 @@ const config: CodegenConfig = {
           User: "@prisma/client#User",
           Board: "@prisma/client#Board",
           Task: "@prisma/client#Task",
+          Comment: "@prisma/client#Comment",
+          BoardMember: "@prisma/client#BoardMember",
         },
 
         scalars: {
@@ -49,6 +52,7 @@ const config: CodegenConfig = {
           Role: "@prisma/client#Role",
           TaskStatus: "@prisma/client#TaskStatus",
           TaskPriority: "@prisma/client#TaskPriority",
+          BoardRole: "@prisma/client#BoardRole",
         },
       },
     },
