@@ -28,6 +28,17 @@ const startServer = async () => {
           },
         };
       }
+
+      if (process.env.NODE_ENV === "production") {
+        return {
+          message: "Internal server error",
+          extensions: {
+            code: "INTERNAL_SERVER_ERROR",
+            statusCode: 500,
+          },
+        };
+      }
+
       return formattedError;
     },
   });

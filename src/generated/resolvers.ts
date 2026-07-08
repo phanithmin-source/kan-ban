@@ -1,7 +1,7 @@
+import type * as Types from "./schema.js";
 import type { GraphQLResolveInfo } from 'graphql';
-import type { User, Board, Task, Role, TaskStatus } from '@prisma/client';
+import type { User, Board, Task, Role, TaskStatus, TaskPriority } from '@prisma/client';
 import type { GraphQLContext } from '../graphql/context';
-import { AuthPayload, CreateBoardInput, CreateTaskInput, LoginInput, LogoutPayload, Maybe, MutationAssignTaskArgs, MutationCreateBoardArgs, MutationCreateTaskArgs, MutationDeleteBoardArgs, MutationDeleteTaskArgs, MutationDeleteUserArgs, MutationLoginArgs, MutationRefreshTokenArgs, MutationRegisterArgs, MutationUpdateBoardArgs, MutationUpdateTaskArgs, MutationUpdateTaskStatusArgs, MutationUpdateUserArgs, QueryBoardArgs, QueryTaskArgs, QueryTasksArgs, QueryUserArgs, RefreshTokenPayload, RegisterInput, Scalars, SortOrder, TaskConnection, TaskFilterInput, TaskSortField, UpdateBoardInput, UpdateTaskInput, UpdateUserInput } from './schema';
 export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 export type RequireFields<T, K extends keyof T> = Omit<T, K> & { [P in K]-?: NonNullable<T[P]> };
 export type EnumResolverSignature<T, AllowedValues = any> = { [key in keyof T]?: AllowedValues };
@@ -58,7 +58,7 @@ export type TypeResolveFn<TTypes, TParent = Record<PropertyKey, never>, TContext
   parent: TParent,
   context: TContext,
   info: GraphQLResolveInfo
-) => Maybe<TTypes> | Promise<Maybe<TTypes>>;
+) => Types.Maybe<TTypes> | Promise<Types.Maybe<TTypes>>;
 
 export type IsTypeOfResolverFn<T = Record<PropertyKey, never>, TContext = Record<PropertyKey, never>> = (obj: T, context: TContext, info: GraphQLResolveInfo) => boolean | Promise<boolean>;
 
@@ -78,56 +78,56 @@ export type DirectiveResolverFn<TResult = Record<PropertyKey, never>, TParent = 
 
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = {
-  AuthPayload: ResolverTypeWrapper<Omit<AuthPayload, 'user'> & { user: ResolversTypes['User'] }>;
+  AuthPayload: ResolverTypeWrapper<Omit<Types.AuthPayload, 'user'> & { user: ResolversTypes['User'] }>;
   Board: ResolverTypeWrapper<Board>;
-  Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
-  CreateBoardInput: CreateBoardInput;
-  CreateTaskInput: CreateTaskInput;
-  ID: ResolverTypeWrapper<Scalars['ID']['output']>;
-  Int: ResolverTypeWrapper<Scalars['Int']['output']>;
-  LoginInput: LoginInput;
-  LogoutPayload: ResolverTypeWrapper<LogoutPayload>;
+  Boolean: ResolverTypeWrapper<Types.Scalars['Boolean']['output']>;
+  CreateBoardInput: Types.CreateBoardInput;
+  CreateTaskInput: Types.CreateTaskInput;
+  ID: ResolverTypeWrapper<Types.Scalars['ID']['output']>;
+  Int: ResolverTypeWrapper<Types.Scalars['Int']['output']>;
+  LoginInput: Types.LoginInput;
+  LogoutPayload: ResolverTypeWrapper<Types.LogoutPayload>;
   Mutation: ResolverTypeWrapper<Record<PropertyKey, never>>;
   Query: ResolverTypeWrapper<Record<PropertyKey, never>>;
-  RefreshTokenPayload: ResolverTypeWrapper<RefreshTokenPayload>;
-  RegisterInput: RegisterInput;
+  RefreshTokenPayload: ResolverTypeWrapper<Types.RefreshTokenPayload>;
+  RegisterInput: Types.RegisterInput;
   Role: Role;
-  SortOrder: SortOrder;
-  String: ResolverTypeWrapper<Scalars['String']['output']>;
+  SortOrder: Types.SortOrder;
+  String: ResolverTypeWrapper<Types.Scalars['String']['output']>;
   Task: ResolverTypeWrapper<Task>;
-  TaskConnection: ResolverTypeWrapper<Omit<TaskConnection, 'data'> & { data: Array<ResolversTypes['Task']> }>;
-  TaskFilterInput: TaskFilterInput;
+  TaskConnection: ResolverTypeWrapper<Omit<Types.TaskConnection, 'data'> & { data: Array<ResolversTypes['Task']> }>;
+  TaskFilterInput: Types.TaskFilterInput;
   TaskPriority: TaskPriority;
-  TaskSortField: TaskSortField;
+  TaskSortField: Types.TaskSortField;
   TaskStatus: TaskStatus;
-  UpdateBoardInput: UpdateBoardInput;
-  UpdateTaskInput: UpdateTaskInput;
-  UpdateUserInput: UpdateUserInput;
+  UpdateBoardInput: Types.UpdateBoardInput;
+  UpdateTaskInput: Types.UpdateTaskInput;
+  UpdateUserInput: Types.UpdateUserInput;
   User: ResolverTypeWrapper<User>;
 };
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = {
-  AuthPayload: Omit<AuthPayload, 'user'> & { user: ResolversParentTypes['User'] };
+  AuthPayload: Omit<Types.AuthPayload, 'user'> & { user: ResolversParentTypes['User'] };
   Board: Board;
-  Boolean: Scalars['Boolean']['output'];
-  CreateBoardInput: CreateBoardInput;
-  CreateTaskInput: CreateTaskInput;
-  ID: Scalars['ID']['output'];
-  Int: Scalars['Int']['output'];
-  LoginInput: LoginInput;
-  LogoutPayload: LogoutPayload;
+  Boolean: Types.Scalars['Boolean']['output'];
+  CreateBoardInput: Types.CreateBoardInput;
+  CreateTaskInput: Types.CreateTaskInput;
+  ID: Types.Scalars['ID']['output'];
+  Int: Types.Scalars['Int']['output'];
+  LoginInput: Types.LoginInput;
+  LogoutPayload: Types.LogoutPayload;
   Mutation: Record<PropertyKey, never>;
   Query: Record<PropertyKey, never>;
-  RefreshTokenPayload: RefreshTokenPayload;
-  RegisterInput: RegisterInput;
-  String: Scalars['String']['output'];
+  RefreshTokenPayload: Types.RefreshTokenPayload;
+  RegisterInput: Types.RegisterInput;
+  String: Types.Scalars['String']['output'];
   Task: Task;
-  TaskConnection: Omit<TaskConnection, 'data'> & { data: Array<ResolversParentTypes['Task']> };
-  TaskFilterInput: TaskFilterInput;
-  UpdateBoardInput: UpdateBoardInput;
-  UpdateTaskInput: UpdateTaskInput;
-  UpdateUserInput: UpdateUserInput;
+  TaskConnection: Omit<Types.TaskConnection, 'data'> & { data: Array<ResolversParentTypes['Task']> };
+  TaskFilterInput: Types.TaskFilterInput;
+  UpdateBoardInput: Types.UpdateBoardInput;
+  UpdateTaskInput: Types.UpdateTaskInput;
+  UpdateUserInput: Types.UpdateUserInput;
   User: User;
 };
 
@@ -152,29 +152,29 @@ export type LogoutPayloadResolvers<ContextType = GraphQLContext, ParentType exte
 };
 
 export type MutationResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
-  assignTask?: Resolver<ResolversTypes['Task'], ParentType, ContextType, RequireFields<MutationAssignTaskArgs, 'taskId' | 'userId'>>;
-  createBoard?: Resolver<ResolversTypes['Board'], ParentType, ContextType, RequireFields<MutationCreateBoardArgs, 'input'>>;
-  createTask?: Resolver<ResolversTypes['Task'], ParentType, ContextType, RequireFields<MutationCreateTaskArgs, 'input'>>;
-  deleteBoard?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteBoardArgs, 'id'>>;
-  deleteTask?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteTaskArgs, 'id'>>;
-  deleteUser?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<MutationDeleteUserArgs, 'id'>>;
-  login?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationLoginArgs, 'input'>>;
+  assignTask?: Resolver<ResolversTypes['Task'], ParentType, ContextType, RequireFields<Types.MutationAssignTaskArgs, 'taskId' | 'userId'>>;
+  createBoard?: Resolver<ResolversTypes['Board'], ParentType, ContextType, RequireFields<Types.MutationCreateBoardArgs, 'input'>>;
+  createTask?: Resolver<ResolversTypes['Task'], ParentType, ContextType, RequireFields<Types.MutationCreateTaskArgs, 'input'>>;
+  deleteBoard?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<Types.MutationDeleteBoardArgs, 'id'>>;
+  deleteTask?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<Types.MutationDeleteTaskArgs, 'id'>>;
+  deleteUser?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<Types.MutationDeleteUserArgs, 'id'>>;
+  login?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<Types.MutationLoginArgs, 'input'>>;
   logout?: Resolver<ResolversTypes['LogoutPayload'], ParentType, ContextType>;
-  refreshToken?: Resolver<ResolversTypes['RefreshTokenPayload'], ParentType, ContextType, RequireFields<MutationRefreshTokenArgs, 'token'>>;
-  register?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<MutationRegisterArgs, 'input'>>;
-  updateBoard?: Resolver<ResolversTypes['Board'], ParentType, ContextType, RequireFields<MutationUpdateBoardArgs, 'id' | 'input'>>;
-  updateTask?: Resolver<ResolversTypes['Task'], ParentType, ContextType, RequireFields<MutationUpdateTaskArgs, 'id' | 'input'>>;
-  updateTaskStatus?: Resolver<ResolversTypes['Task'], ParentType, ContextType, RequireFields<MutationUpdateTaskStatusArgs, 'id' | 'status'>>;
-  updateUser?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<MutationUpdateUserArgs, 'id' | 'input'>>;
+  refreshToken?: Resolver<ResolversTypes['RefreshTokenPayload'], ParentType, ContextType, RequireFields<Types.MutationRefreshTokenArgs, 'token'>>;
+  register?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<Types.MutationRegisterArgs, 'input'>>;
+  updateBoard?: Resolver<ResolversTypes['Board'], ParentType, ContextType, RequireFields<Types.MutationUpdateBoardArgs, 'id' | 'input'>>;
+  updateTask?: Resolver<ResolversTypes['Task'], ParentType, ContextType, RequireFields<Types.MutationUpdateTaskArgs, 'id' | 'input'>>;
+  updateTaskStatus?: Resolver<ResolversTypes['Task'], ParentType, ContextType, RequireFields<Types.MutationUpdateTaskStatusArgs, 'id' | 'status'>>;
+  updateUser?: Resolver<ResolversTypes['User'], ParentType, ContextType, RequireFields<Types.MutationUpdateUserArgs, 'id' | 'input'>>;
 };
 
 export type QueryResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
-  board?: Resolver<Maybe<ResolversTypes['Board']>, ParentType, ContextType, RequireFields<QueryBoardArgs, 'id'>>;
+  board?: Resolver<Types.Maybe<ResolversTypes['Board']>, ParentType, ContextType, RequireFields<Types.QueryBoardArgs, 'id'>>;
   boards?: Resolver<Array<ResolversTypes['Board']>, ParentType, ContextType>;
-  me?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
-  task?: Resolver<Maybe<ResolversTypes['Task']>, ParentType, ContextType, RequireFields<QueryTaskArgs, 'id'>>;
-  tasks?: Resolver<ResolversTypes['TaskConnection'], ParentType, ContextType, Partial<QueryTasksArgs>>;
-  user?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<QueryUserArgs, 'id'>>;
+  me?: Resolver<Types.Maybe<ResolversTypes['User']>, ParentType, ContextType>;
+  task?: Resolver<Types.Maybe<ResolversTypes['Task']>, ParentType, ContextType, RequireFields<Types.QueryTaskArgs, 'id'>>;
+  tasks?: Resolver<ResolversTypes['TaskConnection'], ParentType, ContextType, Partial<Types.QueryTasksArgs>>;
+  user?: Resolver<Types.Maybe<ResolversTypes['User']>, ParentType, ContextType, RequireFields<Types.QueryUserArgs, 'id'>>;
   users?: Resolver<Array<ResolversTypes['User']>, ParentType, ContextType>;
 };
 
@@ -185,11 +185,11 @@ export type RefreshTokenPayloadResolvers<ContextType = GraphQLContext, ParentTyp
 export type RoleResolvers = EnumResolverSignature<{ ADMIN?: any, MANAGER?: any, USER?: any }, ResolversTypes['Role']>;
 
 export type TaskResolvers<ContextType = GraphQLContext, ParentType extends ResolversParentTypes['Task'] = ResolversParentTypes['Task']> = {
-  assignee?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
+  assignee?: Resolver<Types.Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   board?: Resolver<ResolversTypes['Board'], ParentType, ContextType>;
   createdAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  dueDate?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  description?: Resolver<Types.Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  dueDate?: Resolver<Types.Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   priority?: Resolver<ResolversTypes['TaskPriority'], ParentType, ContextType>;
   status?: Resolver<ResolversTypes['TaskStatus'], ParentType, ContextType>;

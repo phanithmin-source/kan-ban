@@ -62,13 +62,13 @@ export const taskResolvers: Pick<
 
   Mutation: {
     createTask: (_parent, { input }, context) => {
-    requireRole(context, ["ADMIN", "MANAGER"]);
-    return taskService.createTask({
-      ...input,
-      description: input.description ?? undefined,
-      dueDate: input.dueDate ?? undefined,
-  });
-},
+      const user = requireRole(context, ["ADMIN", "MANAGER"]);
+      return taskService.createTask({
+        ...input,
+        description: input.description ?? undefined,
+        dueDate: input.dueDate ?? undefined,
+      }, user);
+    },
 
     updateTask: (_parent, { id, input }, context) => {
       const user = requireAuth(context);
@@ -111,18 +111,10 @@ export const taskResolvers: Pick<
     ) => {
       const user = requireAuth(context);
 
-      if (
-        user.role !== "ADMIN" &&
-        user.role !== "MANAGER"
-      ) {
-        throw new ForbiddenError(
-          "You do not have permission"
-        );
-      }
-
       return taskService.updateStatus(
         id,
-        status
+        status,
+        user
       );
     },
 
@@ -158,8 +150,8 @@ export const taskResolvers: Pick<
   },
 
     assignee: (parent, _args, context) =>
-      context.loaders.taskAssigneeLoader.load(
-        parent.assigneeId
-      ),
+      parent.assigneeId
+        ? context.loaders.taskAssigneeLoader.load(parent.assigneeId)
+        : null,
   },
 };

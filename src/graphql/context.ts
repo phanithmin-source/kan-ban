@@ -16,6 +16,7 @@ export interface GraphQLContext {
     boardTasksLoader: DataLoader<number, Task[]>;
     boardOwnerLoader: DataLoader<number, User | null>;
     taskAssigneeLoader: DataLoader<number | null, User | null>;
+    userBoardsLoader: DataLoader<number, Board[]>;
   };
 }
 
@@ -87,6 +88,20 @@ const createTaskAssigneeLoader = () =>
     );
   });
 
+const createUserBoardsLoader = () =>
+  new DataLoader<number, Board[]>(async (userIds) => {
+    const boards = await prisma.board.findMany({
+      where: { ownerId: { in: userIds as number[] } },
+      orderBy: { createdAt: "asc" },
+    });
+    const boardsByUser = new Map<number, Board[]>();
+    userIds.forEach((id) => boardsByUser.set(id, []));
+    boards.forEach((board) => {
+      boardsByUser.get(board.ownerId)?.push(board);
+    });
+    return userIds.map((id) => boardsByUser.get(id) || []);
+  });
+
 export const createContext = async ({
   req,
 }: {
@@ -102,11 +117,15 @@ export const createContext = async ({
     try {
       const payload = verifyToken(token);
 
-      user = await prisma.user.findUnique({
-        where: {
-          id: payload.id,
-        },
-      });
+      user = {
+        id: payload.id,
+        email: payload.email,
+        role: payload.role,
+        name: "",
+        password: "",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
     } catch {
       // Invalid token
       user = null;
@@ -123,6 +142,7 @@ export const createContext = async ({
       boardTasksLoader: createBoardTasksLoader(),
       boardOwnerLoader: createBoardOwnerLoader(),
       taskAssigneeLoader: createTaskAssigneeLoader(),
+      userBoardsLoader: createUserBoardsLoader(),
     },
   };
 };

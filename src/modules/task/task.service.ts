@@ -2,9 +2,9 @@ import { TaskStatus } from "@prisma/client";
 import { ZodError } from "zod";
 
 import taskRepository from "./task.repository.js";
-import boardRepository from "../board/board.repository.js";
+import boardService from "../board/board.service.js";
+import userRepository from "../user/user.repository.js";
 import { createTaskSchema, updateTaskSchema } from "./task.validation.js";
-import prisma from "../../config/prisma.js";
 import type { CreateTaskInput , UpdateTaskInput } from "../../generated/schema.js";
 
 
@@ -49,15 +49,23 @@ class TaskService {
     return task;
   }
 
-  async createTask(input: CreateTaskInput) {
+  async createTask(
+    input: CreateTaskInput,
+    currentUser: {
+      id: number;
+      role: "ADMIN" | "MANAGER" | "USER";
+    }
+  ) {
     try {
       const data = createTaskSchema.parse(input);
 
       // Verify board exists
-      const board = await boardRepository.findById(data.boardId);
+      const board = await boardService.getBoardById(data.boardId);
 
-      if (!board) {
-        throw new NotFoundError("Board not found");
+      if (currentUser.role !== "ADMIN" && board.ownerId !== currentUser.id) {
+        throw new ForbiddenError(
+          "You do not have permission to add tasks to this board"
+        );
       }
 
       return taskRepository.create({
@@ -88,7 +96,7 @@ class TaskService {
   async updateTask(
     id: number,
     input: UpdateTaskInput,
-    currentUser?: {
+    currentUser: {
       id: number;
       role: "ADMIN" | "MANAGER" | "USER";
     }
@@ -99,15 +107,18 @@ class TaskService {
       throw new NotFoundError("Task not found");
     }
 
-    if (
-      currentUser &&
-      currentUser.role !== "ADMIN" &&
-      currentUser.role !== "MANAGER" &&
-      task.assigneeId !== currentUser.id
-    ) {
-      throw new ForbiddenError(
-        "You do not have permission"
+    if (currentUser.role !== "ADMIN") {
+      const accessibleTask = await taskRepository.findAccessibleById(
+        id,
+        currentUser.id,
+        currentUser.role
       );
+
+      if (!accessibleTask) {
+        throw new ForbiddenError(
+          "You do not have permission"
+        );
+      }
     }
 
     try {
@@ -136,7 +147,40 @@ class TaskService {
     return taskRepository.delete(id);
   }
 
-  async updateStatus(id: number, status: TaskStatus) {
+  async updateStatus(
+    id: number,
+    status: TaskStatus,
+    currentUser: {
+      id: number;
+      role: "ADMIN" | "MANAGER" | "USER";
+    }
+  ) {
+    const task = await taskRepository.findById(id);
+
+    if (!task) {
+      throw new NotFoundError("Task not found");
+    }
+
+    if (currentUser.role === "USER") {
+      if (task.assigneeId !== currentUser.id) {
+        throw new ForbiddenError(
+          "You can only move tasks assigned to you"
+        );
+      }
+    } else if (currentUser.role !== "ADMIN") {
+      const accessibleTask = await taskRepository.findAccessibleById(
+        id,
+        currentUser.id,
+        currentUser.role
+      );
+
+      if (!accessibleTask) {
+        throw new ForbiddenError(
+          "You do not have permission"
+        );
+      }
+    }
+
     return taskRepository.update(id, {
       status,
     });
@@ -156,11 +200,7 @@ class TaskService {
       throw new NotFoundError("Task not found");
     }
 
-    const user = await prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-    });
+    const user = await userRepository.findById(userId);
 
     if (!user) {
       throw new NotFoundError("User not found");

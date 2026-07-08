@@ -28,6 +28,7 @@ const config: CodegenConfig = {
 
       config: {
         contextType: "../graphql/context#GraphQLContext",
+        namespacedImportName: "Types",
 
         useTypeImports: true,
 
@@ -54,6 +55,10 @@ const config: CodegenConfig = {
   },
 
   ignoreNoDocuments: true,
+
+  hooks: {
+    afterOneFileWrite: ["node scripts/fix-codegen.js"],
+  },
 };
 
 export default config;

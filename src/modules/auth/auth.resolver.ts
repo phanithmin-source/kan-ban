@@ -10,11 +10,14 @@ export const authResolvers: Pick<
   "Query" | "Mutation"
 > = {
   Query: {
-    me: (
+    me: async (
       _parent,
       _args,
       context
-    ) => requireAuth(context),
+    ) => {
+      const user = requireAuth(context);
+      return context.loaders.userLoader.load(user.id);
+    },
   },
 
   Mutation: {

@@ -94,9 +94,10 @@ class TaskRepository {
     const where = this.buildWhere(filter);
 
     if (role !== Role.ADMIN) {
-      where.board = {
-        ownerId: userId,
-      };
+      where.OR = [
+        { board: { ownerId: userId } },
+        { assigneeId: userId },
+      ];
     }
 
     const orderBy = this.buildOrderBy(filter);
@@ -132,10 +133,11 @@ class TaskRepository {
         ...(role === Role.ADMIN
           ? {}
           : {
-            board: {
-              ownerId: userId,
-            },
-          }),
+              OR: [
+                { board: { ownerId: userId } },
+                { assigneeId: userId },
+              ],
+            }),
       },
     });
   }

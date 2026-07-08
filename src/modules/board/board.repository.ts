@@ -28,7 +28,10 @@ class BoardRepository {
         role === "ADMIN"
           ? {}
           : {
-              ownerId: userId,
+              OR: [
+                { ownerId: userId },
+                { tasks: { some: { assigneeId: userId } } },
+              ],
             },
 
       orderBy: {
@@ -66,7 +69,10 @@ class BoardRepository {
         ...(role === "ADMIN"
           ? {}
           : {
-              ownerId: userId,
+              OR: [
+                { ownerId: userId },
+                { tasks: { some: { assigneeId: userId } } },
+              ],
             }),
       },
     });
