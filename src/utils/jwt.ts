@@ -9,18 +9,14 @@ export interface JwtPayload {
 
 export function generateAccessToken(payload: JwtPayload) {
   return jwt.sign(payload, env.JWT_SECRET, {
-    expiresIn: "15m",
+    expiresIn: "7m",
   });
 }
 
 export function generateRefreshToken(payload: JwtPayload) {
   return jwt.sign(payload, env.JWT_SECRET, {
-    expiresIn: "1h",
+    expiresIn: "3d",
   });
-}
-
-export function generateToken(payload: JwtPayload) {
-  return generateAccessToken(payload);
 }
 
 export function verifyToken(token: string) {

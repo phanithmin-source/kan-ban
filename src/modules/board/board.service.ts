@@ -10,6 +10,7 @@ import {
 } from "../../utils/errors.js";
 
 import { ZodError } from "zod";
+import { BoardRole } from "@prisma/client";
 
 class BoardService {
   getBoards() {
@@ -87,6 +88,86 @@ class BoardService {
     }
 
     return boardRepository.delete(id);
+  }
+
+  async archiveBoard(id: number) {
+    const board = await boardRepository.findById(id);
+
+    if (!board) {
+      throw new NotFoundError("Board not found");
+    }
+
+    return boardRepository.update(id, {
+      archived: true,
+    });
+  }
+
+  async restoreBoard(id: number) {
+    const board = await boardRepository.findById(id);
+
+    if (!board) {
+      throw new NotFoundError("Board not found");
+    }
+
+    return boardRepository.update(id, {
+      archived: false,
+    });
+  }
+
+  // Board Membership operations
+  async addBoardMember(boardId: number, userId: number, role: BoardRole) {
+    const board = await boardRepository.findById(boardId);
+    if (!board) {
+      throw new NotFoundError("Board not found");
+    }
+
+    const existingMember = await boardRepository.findMember(boardId, userId);
+    if (existingMember) {
+      throw new BadRequestError("User is already a member of this board");
+    }
+
+    return boardRepository.addMember(boardId, userId, role);
+  }
+
+  async removeBoardMember(boardId: number, userId: number) {
+    const board = await boardRepository.findById(boardId);
+    if (!board) {
+      throw new NotFoundError("Board not found");
+    }
+
+    const member = await boardRepository.findMember(boardId, userId);
+    if (!member) {
+      throw new NotFoundError("Board member not found");
+    }
+
+    if (member.role === BoardRole.OWNER) {
+      throw new BadRequestError("Cannot remove the board owner");
+    }
+
+    await boardRepository.removeMember(boardId, userId);
+    return true;
+  }
+
+  async updateBoardMemberRole(boardId: number, userId: number, role: BoardRole) {
+    const board = await boardRepository.findById(boardId);
+    if (!board) {
+      throw new NotFoundError("Board not found");
+    }
+
+    const member = await boardRepository.findMember(boardId, userId);
+    if (!member) {
+      throw new NotFoundError("Board member not found");
+    }
+
+    if (member.role === BoardRole.OWNER) {
+      throw new BadRequestError("Cannot change role of the board owner");
+    }
+
+    if (role === BoardRole.OWNER) {
+      throw new BadRequestError("Cannot transfer ownership via role change");
+    }
+
+    return boardRepository.updateMemberRole(boardId, userId, role);
   }
 }
 

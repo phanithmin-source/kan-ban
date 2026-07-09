@@ -4,9 +4,6 @@ import { Prisma } from "@prisma/client";
 class UserRepository {
   findAll() {
     return prisma.user.findMany({
-      include: {
-        boards: true,
-      },
       orderBy: {
         createdAt: "desc",
       },
@@ -16,9 +13,6 @@ class UserRepository {
   findById(id: number) {
     return prisma.user.findUnique({
       where: { id },
-      include: {
-        boards: true,
-      },
     });
   }
 
@@ -39,9 +33,6 @@ class UserRepository {
         id,
       },
       data,
-      include: {
-        boards: true,
-      },
     });
   }
 

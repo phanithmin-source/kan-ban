@@ -16,6 +16,8 @@ export interface TaskFilter {
 
   priority?: Task["priority"];
 
+  boardId?: number;
+
   page?: number;
 
   limit?: number;

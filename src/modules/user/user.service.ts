@@ -8,7 +8,7 @@ import {
 
 import type {
   UpdateUserInput,
-} from "./dto/user.dto.js";
+} from "../../generated/schema.js";
 
 import {
   BadRequestError,
