@@ -309,6 +309,7 @@ export type TaskConnection = {
 };
 
 export type TaskFilterInput = {
+  assigneeId?: InputMaybe<Scalars['ID']['input']>;
   boardId?: InputMaybe<Scalars['ID']['input']>;
   limit?: InputMaybe<Scalars['Int']['input']>;
   order?: InputMaybe<SortOrder>;

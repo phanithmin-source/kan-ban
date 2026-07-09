@@ -28,6 +28,10 @@ class TaskRepository {
       where.priority = filter.priority;
     }
 
+    if (filter.assigneeId) {
+      where.assigneeId = filter.assigneeId;
+    }
+
     return where;
   }
 

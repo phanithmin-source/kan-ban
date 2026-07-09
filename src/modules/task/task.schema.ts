@@ -62,6 +62,7 @@ input TaskFilterInput {
   status: TaskStatus
   priority: TaskPriority
   boardId: ID
+  assigneeId: ID
 
   page: Int = 1
   limit: Int = 10
