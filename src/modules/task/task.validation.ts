@@ -11,9 +11,9 @@ export const createTaskSchema = z.object({
 
   description: z.string().optional(),
 
-  status: z.nativeEnum(TaskStatus),
+  status: z.enum(TaskStatus),
 
-  priority: z.nativeEnum(TaskPriority),
+  priority: z.enum(TaskPriority),
 
   dueDate: z.string().date().optional(),
 });
