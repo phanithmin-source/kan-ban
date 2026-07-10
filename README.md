@@ -148,13 +148,21 @@ Then use the same `.env` values above to connect the app to the Docker database.
 npm run db:generate
 ```
 
-### 4. Run database migrations
+### 5. Run database migrations
 
 ```bash
 npm run db:migrate
 ```
 
-### 5. Start the application
+### 6. Seed database with mock data
+
+```bash
+npx tsx prisma/seed.ts
+```
+
+*Note: This generates default accounts (Admin: `admin@test.com`, Managers: `manager1@test.com` to `manager3@test.com`, Users: `user1@test.com` to `user16@test.com`) with the password `Password123`.*
+
+### 7. Start the application
 
 ```bash
 npm run dev

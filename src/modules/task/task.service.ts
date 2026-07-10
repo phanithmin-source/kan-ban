@@ -1,4 +1,4 @@
-import { TaskStatus } from "@prisma/client";
+import { TaskStatus, BoardRole } from "@prisma/client";
 import { ZodError } from "zod";
 
 import taskRepository from "./task.repository.js";
@@ -65,7 +65,7 @@ class TaskService {
       // Enforce board membership for non-admins
       if (currentUser.role !== "ADMIN") {
         const member = await boardRepository.findMember(data.boardId, currentUser.id);
-        if (!member) {
+        if (!member || member.role === BoardRole.VIEWER) {
           throw new ForbiddenError(
             "You do not have permission to add tasks to this board"
           );
@@ -118,7 +118,7 @@ class TaskService {
 
     if (currentUser.role !== "ADMIN") {
       const member = await boardRepository.findMember(task.boardId, currentUser.id);
-      if (!member) {
+      if (!member || member.role === BoardRole.VIEWER) {
         throw new ForbiddenError(
           "You do not have permission to edit tasks on this board"
         );
@@ -174,7 +174,7 @@ class TaskService {
 
     if (currentUser.role !== "ADMIN") {
       const member = await boardRepository.findMember(task.boardId, currentUser.id);
-      if (!member) {
+      if (!member || member.role === BoardRole.VIEWER) {
         throw new ForbiddenError(
           "You do not have permission to access this board"
         );
@@ -216,16 +216,16 @@ class TaskService {
 
     if (currentUser.role !== "ADMIN") {
       const member = await boardRepository.findMember(task.boardId, currentUser.id);
-      if (!member) {
+      if (!member || member.role === BoardRole.VIEWER) {
         throw new ForbiddenError(
           "You do not have permission to access this board"
         );
       }
     }
 
-    // Verify the assignee is a member of the board
+    // Verify the assignee is a member of the board (and not a viewer)
     const assigneeMembership = await boardRepository.findMember(task.boardId, userId);
-    if (!assigneeMembership) {
+    if (!assigneeMembership || assigneeMembership.role === BoardRole.VIEWER) {
       throw new BadRequestError("Assignee must be a member of the board");
     }
 
@@ -243,7 +243,7 @@ class TaskService {
 
     if (currentUser.role !== "ADMIN") {
       const member = await boardRepository.findMember(task.boardId, currentUser.id);
-      if (!member) {
+      if (!member || member.role === BoardRole.VIEWER) {
         throw new ForbiddenError("You do not have access to this board");
       }
     }
@@ -261,7 +261,7 @@ class TaskService {
 
     if (currentUser.role !== "ADMIN") {
       const member = await boardRepository.findMember(task.boardId, currentUser.id);
-      if (!member) {
+      if (!member || member.role === BoardRole.VIEWER) {
         throw new ForbiddenError("You do not have access to this board");
       }
     }
@@ -280,7 +280,10 @@ class TaskService {
 
     const member = await boardRepository.findMember(task.boardId, userId);
     const user = await userRepository.findById(userId);
-    if (!member && user?.role !== "ADMIN") {
+    if (
+      (!member || member.role === BoardRole.VIEWER) &&
+      user?.role !== "ADMIN"
+    ) {
       throw new ForbiddenError("You must be a board member to add comments");
     }
 
