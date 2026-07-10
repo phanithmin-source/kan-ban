@@ -37,6 +37,6 @@ extend type Mutation {
 
   logout: LogoutPayload!
 
-  refreshToken(token: String!): RefreshTokenPayload!
+  refreshToken(token: String): RefreshTokenPayload!
 }
 `;

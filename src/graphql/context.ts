@@ -2,13 +2,15 @@ import prisma from "../config/prisma.js";
 import DataLoader from "dataloader";
 
 import type { User, Board, Task, BoardMember, Comment } from "@prisma/client";
-import type { Request } from "express";
+import type { Request, Response } from "express";
 
 import { verifyToken } from "../utils/jwt.js";
 
 export interface GraphQLContext {
   prisma: typeof prisma;
   user: User | null;
+  req?: Request;
+  res?: Response;
   loaders: {
     userLoader: DataLoader<number, User | null>;
     boardLoader: DataLoader<number, Board | null>;
@@ -144,16 +146,22 @@ const createBoardMembersLoader = () =>
 
 export const createContext = async ({
   req,
+  res,
 }: {
   req: Request;
+  res?: Response;
 }): Promise<GraphQLContext> => {
   let user: User | null = null;
 
-  const authHeader = req.headers.authorization;
+  let token = req.cookies?.accessToken;
+  if (!token) {
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      token = authHeader.substring(7);
+    }
+  }
 
-  if (authHeader?.startsWith("Bearer ")) {
-    const token = authHeader.substring(7);
-
+  if (token) {
     try {
       const payload = verifyToken(token);
 
@@ -175,6 +183,8 @@ export const createContext = async ({
   return {
     prisma,
     user,
+    req,
+    res,
     loaders: {
       userLoader: createUserLoader(),
       boardLoader: createBoardLoader(),

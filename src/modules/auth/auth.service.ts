@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import { ZodError } from "zod";
+import type { Request, Response } from "express";
 
 import authRepository from "./auth.repository.js";
 import refreshTokenRepository from "./refresh-token.repository.js";
@@ -23,7 +24,7 @@ import {
 
 
 class AuthService {
-  async register(input: RegisterInput) {
+  async register(input: RegisterInput, res?: Response) {
     try {
       const data = registerSchema.parse(input);
 
@@ -69,6 +70,21 @@ class AuthService {
         expiresAt
       );
 
+      if (res) {
+        res.cookie("accessToken", accessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 7 * 60 * 1000,
+        });
+        res.cookie("refreshToken", refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 3 * 24 * 60 * 60 * 1000,
+        });
+      }
+
       return {
         accessToken,
         refreshToken,
@@ -85,7 +101,7 @@ class AuthService {
     }
   }
 
-  async login(input: LoginInput) {
+  async login(input: LoginInput, res?: Response) {
     try {
       const data = loginSchema.parse(input);
 
@@ -132,6 +148,21 @@ class AuthService {
         expiresAt
       );
 
+      if (res) {
+        res.cookie("accessToken", accessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 7 * 60 * 1000,
+        });
+        res.cookie("refreshToken", refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 3 * 24 * 60 * 60 * 1000,
+        });
+      }
+
       return {
         accessToken,
         refreshToken,
@@ -148,10 +179,15 @@ class AuthService {
     }
   }
 
-  async logout(userId: number) {
+  async logout(userId: number, res?: Response) {
     await refreshTokenRepository.deleteByUserId(
       userId
     );
+
+    if (res) {
+      res.clearCookie("accessToken");
+      res.clearCookie("refreshToken");
+    }
 
     return {
       success: true,
@@ -159,13 +195,28 @@ class AuthService {
     };
   }
 
-  async refreshAccessToken(refreshToken: string) {
+  async refreshAccessToken(
+    refreshToken: string | undefined | null,
+    res?: Response,
+    req?: Request
+  ) {
     try {
-      const decoded = verifyToken(refreshToken);
+      let token = refreshToken;
+      if (!token && req) {
+        token = req.cookies?.refreshToken;
+      }
+
+      if (!token) {
+        throw new UnauthorizedError(
+          "Refresh token is invalid or expired"
+        );
+      }
+
+      const decoded = verifyToken(token);
 
       const storedToken =
         await refreshTokenRepository.findByToken(
-          refreshToken
+          token
         );
 
       if (
@@ -182,6 +233,15 @@ class AuthService {
         email: decoded.email,
         role: decoded.role,
       });
+
+      if (res) {
+        res.cookie("accessToken", accessToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 7 * 60 * 1000,
+        });
+      }
 
       return { accessToken };
     } catch (error) {

@@ -48,7 +48,7 @@ const startServer = async () => {
   app.use(
     "/graphql",
     expressMiddleware(server, {
-      context: createContext,
+      context: async ({ req, res }) => createContext({ req, res }),
     })
   );
 
