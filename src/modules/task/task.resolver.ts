@@ -164,11 +164,11 @@ export const taskResolvers: Pick<
 
     assignee: (parent, _args, context) =>
       parent.assigneeId
-        ? context.loaders.taskAssigneeLoader.load(parent.assigneeId)
+        ? context.loaders.userLoader.load(parent.assigneeId)
         : null,
 
     creator: async (parent, _args, context) => {
-      const creator = await context.loaders.taskCreatorLoader.load(parent.creatorId);
+      const creator = await context.loaders.userLoader.load(parent.creatorId);
       if (!creator) {
         throw new Error("Creator user not found");
       }
