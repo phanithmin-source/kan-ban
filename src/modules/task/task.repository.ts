@@ -120,6 +120,11 @@ class TaskRepository {
         orderBy,
         skip,
         take: limit,
+        include: {
+          board: true,
+          assignee: true,
+          creator: true,
+        },
       }),
 
       prisma.task.count({
@@ -150,6 +155,11 @@ class TaskRepository {
                 },
               },
             }),
+      },
+      include: {
+        board: true,
+        assignee: true,
+        creator: true,
       },
     });
   }

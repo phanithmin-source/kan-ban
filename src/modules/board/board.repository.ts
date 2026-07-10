@@ -37,6 +37,9 @@ class BoardRepository {
               },
             }),
       },
+      include: {
+        owner: true,
+      },
       orderBy: {
         createdAt: "asc",
       },
@@ -68,13 +71,21 @@ class BoardRepository {
     return prisma.board.findFirst({
       where: {
         id,
-        ...(role === "ADMIN"
+        ...(role === Role.ADMIN
           ? {}
           : {
               members: {
                 some: { userId },
               },
             }),
+      },
+      include: {
+        owner: true,
+        members: {
+          include: {
+            user: true,
+          },
+        },
       },
     });
   }

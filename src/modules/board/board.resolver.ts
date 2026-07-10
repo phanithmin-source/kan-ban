@@ -185,6 +185,7 @@ export const boardResolvers: Pick<
 
   Board: {
     owner: async (parent, _args, context) => {
+      if ((parent as any).owner) return (parent as any).owner;
       const owner =
         await context.loaders.userLoader.load(parent.ownerId);
 
@@ -196,17 +197,21 @@ export const boardResolvers: Pick<
     tasks: (parent, _args, context) =>
       context.loaders.boardTasksLoader.load(parent.id),
     isArchived: (parent) => parent.archived,
-    members: (parent, _args, context) =>
-      context.loaders.boardMembersLoader.load(parent.id),
+    members: (parent, _args, context) => {
+      if ((parent as any).members) return (parent as any).members;
+      return context.loaders.boardMembersLoader.load(parent.id);
+    },
   },
 
   BoardMember: {
-    user: (parent, _args, context) =>
-      context.loaders.userLoader.load(parent.userId).then((user) => {
+    user: (parent, _args, context) => {
+      if ((parent as any).user) return (parent as any).user;
+      return context.loaders.userLoader.load(parent.userId).then((user) => {
         if (!user) {
           throw new Error("User not found for board membership");
         }
         return user;
-      }),
+      });
+    },
   },
 };

@@ -53,6 +53,11 @@ const createBoardTasksLoader = () =>
   new DataLoader<number, Task[]>(async (boardIds) => {
     const tasks = await prisma.task.findMany({
       where: { boardId: { in: boardIds as number[] } },
+      include: {
+        board: true,
+        assignee: true,
+        creator: true,
+      },
       orderBy: { createdAt: "desc" },
     });
     const tasksByBoard = new Map<number, Task[]>();
@@ -83,6 +88,7 @@ const createTaskCommentsLoader = () =>
   new DataLoader<number, Comment[]>(async (taskIds) => {
     const comments = await prisma.comment.findMany({
       where: { taskId: { in: taskIds as number[] } },
+      include: { user: true },
       orderBy: { createdAt: "desc" },
     });
     const commentsByTask = new Map<number, Comment[]>();
@@ -97,6 +103,7 @@ const createBoardMembersLoader = () =>
   new DataLoader<number, BoardMember[]>(async (boardIds) => {
     const members = await prisma.boardMember.findMany({
       where: { boardId: { in: boardIds as number[] } },
+      include: { user: true },
       orderBy: { createdAt: "asc" },
     });
     const membersByBoard = new Map<number, BoardMember[]>();
