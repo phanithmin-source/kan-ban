@@ -16,10 +16,7 @@ export interface GraphQLContext {
     boardLoader: DataLoader<number, Board | null>;
     taskLoader: DataLoader<number, Task | null>;
     boardTasksLoader: DataLoader<number, Task[]>;
-    boardOwnerLoader: DataLoader<number, User | null>;
-    taskAssigneeLoader: DataLoader<number | null, User | null>;
     userBoardsLoader: DataLoader<number, Board[]>;
-    taskCreatorLoader: DataLoader<number, User | null>;
     taskCommentsLoader: DataLoader<number, Comment[]>;
     boardMembersLoader: DataLoader<number, BoardMember[]>;
   };
@@ -66,32 +63,6 @@ const createBoardTasksLoader = () =>
     return boardIds.map((id) => tasksByBoard.get(id) || []);
   });
 
-const createBoardOwnerLoader = () =>
-  new DataLoader<number, User | null>(async (ownerIds) => {
-    const users = await prisma.user.findMany({
-      where: {
-        id: {
-          in: ownerIds as number[],
-        },
-      },
-    });
-
-    const userMap = new Map(users.map((user) => [user.id, user]));
-
-    return ownerIds.map((id) => userMap.get(id) ?? null);
-  });
-
-const createTaskAssigneeLoader = () =>
-  new DataLoader<number | null, User | null>(async (assigneeIds) => {
-    const validIds = assigneeIds.filter((id) => id !== null) as number[];
-    const users = await prisma.user.findMany({
-      where: { id: { in: validIds } },
-    });
-    const userMap = new Map(users.map((u) => [u.id, u]));
-    return assigneeIds.map((id) =>
-      id === null ? null : userMap.get(id) || null
-    );
-  });
 
 const createUserBoardsLoader = () =>
   new DataLoader<number, Board[]>(async (userIds) => {
@@ -107,14 +78,6 @@ const createUserBoardsLoader = () =>
     return userIds.map((id) => boardsByUser.get(id) || []);
   });
 
-const createTaskCreatorLoader = () =>
-  new DataLoader<number, User | null>(async (creatorIds) => {
-    const users = await prisma.user.findMany({
-      where: { id: { in: creatorIds as number[] } },
-    });
-    const userMap = new Map(users.map((u) => [u.id, u]));
-    return creatorIds.map((id) => userMap.get(id) || null);
-  });
 
 const createTaskCommentsLoader = () =>
   new DataLoader<number, Comment[]>(async (taskIds) => {
@@ -190,10 +153,7 @@ export const createContext = async ({
       boardLoader: createBoardLoader(),
       taskLoader: createTaskLoader(),
       boardTasksLoader: createBoardTasksLoader(),
-      boardOwnerLoader: createBoardOwnerLoader(),
-      taskAssigneeLoader: createTaskAssigneeLoader(),
       userBoardsLoader: createUserBoardsLoader(),
-      taskCreatorLoader: createTaskCreatorLoader(),
       taskCommentsLoader: createTaskCommentsLoader(),
       boardMembersLoader: createBoardMembersLoader(),
     },

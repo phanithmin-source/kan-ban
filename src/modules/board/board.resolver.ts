@@ -186,7 +186,7 @@ export const boardResolvers: Pick<
   Board: {
     owner: async (parent, _args, context) => {
       const owner =
-        await context.loaders.boardOwnerLoader.load(parent.ownerId);
+        await context.loaders.userLoader.load(parent.ownerId);
 
       if (!owner) {
         throw new Error("Board owner not found");
