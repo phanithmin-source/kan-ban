@@ -20,6 +20,7 @@ export const userTypeDefs = `#graphql
   input UpdateUserInput {
     name: String
     email: String
+    role: Role
   }
 
   extend type Query {
