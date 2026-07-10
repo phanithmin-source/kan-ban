@@ -192,7 +192,7 @@ export type MutationResolvers<ContextType = GraphQLContext, ParentType extends R
   deleteUser?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<Types.MutationDeleteUserArgs, 'id'>>;
   login?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<Types.MutationLoginArgs, 'input'>>;
   logout?: Resolver<ResolversTypes['LogoutPayload'], ParentType, ContextType>;
-  refreshToken?: Resolver<ResolversTypes['RefreshTokenPayload'], ParentType, ContextType, RequireFields<Types.MutationRefreshTokenArgs, 'token'>>;
+  refreshToken?: Resolver<ResolversTypes['RefreshTokenPayload'], ParentType, ContextType, Partial<Types.MutationRefreshTokenArgs>>;
   register?: Resolver<ResolversTypes['AuthPayload'], ParentType, ContextType, RequireFields<Types.MutationRegisterArgs, 'input'>>;
   removeBoardMember?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType, RequireFields<Types.MutationRemoveBoardMemberArgs, 'boardId' | 'userId'>>;
   restoreBoard?: Resolver<ResolversTypes['Board'], ParentType, ContextType, RequireFields<Types.MutationRestoreBoardArgs, 'id'>>;

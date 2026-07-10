@@ -172,7 +172,7 @@ export type MutationLoginArgs = {
 
 
 export type MutationRefreshTokenArgs = {
-  token: Scalars['String']['input'];
+  token?: InputMaybe<Scalars['String']['input']>;
 };
 
 

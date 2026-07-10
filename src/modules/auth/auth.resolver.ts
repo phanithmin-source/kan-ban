@@ -23,13 +23,15 @@ export const authResolvers: Pick<
   Mutation: {
     register: (
       _parent,
-      { input }
-    ) => authService.register(input),
+      { input },
+      context
+    ) => authService.register(input, context.res),
 
     login: (
       _parent,
-      { input }
-    ) => authService.login(input),
+      { input },
+      context
+    ) => authService.login(input, context.res),
 
     logout: (
       _parent,
@@ -38,12 +40,13 @@ export const authResolvers: Pick<
     ) => {
       const user = requireAuth(context);
 
-      return authService.logout(user.id);
+      return authService.logout(user.id, context.res);
     },
 
     refreshToken: (
       _parent,
-      { token }
-    ) => authService.refreshAccessToken(token),
+      { token },
+      context
+    ) => authService.refreshAccessToken(token, context.res, context.req),
   },
 };
