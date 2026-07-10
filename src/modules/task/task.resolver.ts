@@ -151,6 +151,7 @@ export const taskResolvers: Pick<
 
   Task: {
     board: async (parent, _args, context) => {
+      if ((parent as any).board) return (parent as any).board;
       const board =
         await context.loaders.boardLoader.load(
           parent.boardId
@@ -162,12 +163,15 @@ export const taskResolvers: Pick<
       return board;
     },
 
-    assignee: (parent, _args, context) =>
-      parent.assigneeId
+    assignee: (parent, _args, context) => {
+      if ((parent as any).assignee !== undefined) return (parent as any).assignee;
+      return parent.assigneeId
         ? context.loaders.userLoader.load(parent.assigneeId)
-        : null,
+        : null;
+    },
 
     creator: async (parent, _args, context) => {
+      if ((parent as any).creator) return (parent as any).creator;
       const creator = await context.loaders.userLoader.load(parent.creatorId);
       if (!creator) {
         throw new Error("Creator user not found");
@@ -183,6 +187,7 @@ export const taskResolvers: Pick<
 
   Comment: {
     user: async (parent, _args, context) => {
+      if ((parent as any).user) return (parent as any).user;
       const user = await context.loaders.userLoader.load(parent.userId);
       if (!user) {
         throw new Error("Comment author user not found");
