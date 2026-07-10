@@ -347,6 +347,7 @@ export type UpdateTaskInput = {
 export type UpdateUserInput = {
   email?: InputMaybe<Scalars['String']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
+  role?: InputMaybe<Role>;
 };
 
 export type User = {

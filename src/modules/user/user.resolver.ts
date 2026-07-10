@@ -30,6 +30,12 @@ export const userResolvers: Pick<
     updateUser: (_parent, { id, input }, context) => {
       const currentUser = requireAuth(context);
 
+      if (input.role && currentUser.role !== "ADMIN") {
+        throw new ForbiddenError(
+          "Only administrators can change user roles."
+        );
+      }
+
       if (
         currentUser.role !== "ADMIN" &&
         currentUser.id !== id
@@ -42,6 +48,7 @@ export const userResolvers: Pick<
       return userService.updateUser(id, {
         name: input.name ?? undefined,
         email: input.email ?? undefined,
+        role: input.role ?? undefined,
       });
     },
 

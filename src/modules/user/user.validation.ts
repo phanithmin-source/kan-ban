@@ -12,4 +12,7 @@ export const updateUserSchema = createUserSchema
   .omit({
     password: true,
   })
-  .partial();
+  .partial()
+  .extend({
+    role: z.enum(["ADMIN", "MANAGER", "USER"]).optional(),
+  });
