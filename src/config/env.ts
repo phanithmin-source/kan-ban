@@ -7,7 +7,7 @@ const envSchema = z.object({
 
   JWT_SECRET: z.string().min(32),
 
-  FRONTEND_URL: z.string().default("http://localhost:5173"),
+  FRONTEND_URL: z.string().default("http://localhost:5173,https://kan-ban-phi.vercel.app"),
 });
 
 export const env = envSchema.parse(process.env);

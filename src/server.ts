@@ -12,8 +12,11 @@ import { typeDefs } from "./graphql/typeDefs.js";
 import { AppError } from "./utils/errors.js";
 import { schema } from "./graphql/schema.js";
 
-const startServer = async () => {
-  const server = new ApolloServer({
+let server: ApolloServer | null = null;
+let apolloMiddleware: any = null;
+
+const initServerPromise = (async () => {
+  server = new ApolloServer({
     schema,
     formatError(formattedError, error) {
       const originalError = unwrapResolverError(error);
@@ -44,22 +47,35 @@ const startServer = async () => {
   });
 
   await server.start();
-
-  app.use(
-    "/graphql",
-    expressMiddleware(server, {
-      context: async ({ req, res }) => createContext({ req, res }),
-    })
-  );
-
-  app.listen(env.PORT, () => {
-    console.log(
-      `🚀 Server running at http://localhost:${env.PORT}/graphql`
-    );
+  apolloMiddleware = expressMiddleware(server, {
+    context: async ({ req, res }) => createContext({ req, res }),
   });
+})();
+
+const apolloHandler = async (req: any, res: any, next: any) => {
+  try {
+    await initServerPromise;
+    apolloMiddleware(req, res, next);
+  } catch (error) {
+    next(error);
+  }
 };
 
-startServer().catch((error) => {
-  console.error("❌ Failed to start server:", error);
-  process.exit(1);
-});
+app.use("/graphql", apolloHandler);
+
+if (!process.env.VERCEL) {
+  initServerPromise
+    .then(() => {
+      app.listen(env.PORT, () => {
+        console.log(
+          `🚀 Server running at http://localhost:${env.PORT}/graphql`
+        );
+      });
+    })
+    .catch((error) => {
+      console.error("❌ Failed to start server:", error);
+      process.exit(1);
+    });
+}
+
+export default app;
