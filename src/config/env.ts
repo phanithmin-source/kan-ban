@@ -6,6 +6,8 @@ const envSchema = z.object({
   DATABASE_URL: z.string(),
 
   JWT_SECRET: z.string().min(32),
+
+  FRONTEND_URL: z.string().default("http://localhost:5173"),
 });
 
 export const env = envSchema.parse(process.env);
