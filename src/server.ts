@@ -18,6 +18,7 @@ let apolloMiddleware: any = null;
 const initServerPromise = (async () => {
   server = new ApolloServer({
     schema,
+    allowBatchedHttpRequests: true,
     formatError(formattedError, error) {
       const originalError = unwrapResolverError(error);
 
