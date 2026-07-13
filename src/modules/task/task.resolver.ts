@@ -16,29 +16,50 @@ import { TaskStatus } from "@prisma/client";
 
 export const taskResolvers: Pick<
   Resolvers,
-  "Query" | "Mutation" | "Task" | "Comment"
+  "Query" | "Mutation" | "Task" | "Comment" | "TaskConnection"
 > = {
   Query: {
-    tasks: async (_parent, { filter }, context) => {
+    tasks: (_parent, { filter }, context) => {
       const user = requireAuth(context);
       
       const page = filter?.page ?? 1;
       const limit = filter?.limit ?? 10;
 
-      const result =
-      await taskRepository.findAllAccessible(
-        user.id,
-        user.role,
-        (filter ?? {}) as TaskFilter
-      );
-      return {
-          data: result.data,
-          total: result.total,
-          page,
-          limit,
-          totalPages: Math.ceil(result.total / limit),
-    };
+      let memoizedData: Promise<any[]> | null = null;
+      let memoizedTotal: Promise<number> | null = null;
 
+      const getTasks = () => {
+        if (!memoizedData) {
+          memoizedData = taskRepository.findManyAccessible(
+            user.id,
+            user.role,
+            (filter ?? {}) as TaskFilter
+          );
+        }
+        return memoizedData;
+      };
+
+      const getCount = () => {
+        if (!memoizedTotal) {
+          memoizedTotal = taskRepository.countAccessible(
+            user.id,
+            user.role,
+            (filter ?? {}) as TaskFilter
+          );
+        }
+        return memoizedTotal;
+      };
+
+      return {
+        page,
+        limit,
+        data: getTasks,
+        total: getCount,
+        totalPages: async () => {
+          const total = await getCount();
+          return Math.ceil(total / limit);
+        },
+      } as any;
     },
 
     task: async (_parent, { id }, context) => {
@@ -194,5 +215,16 @@ export const taskResolvers: Pick<
       }
       return user;
     },
+  },
+
+  TaskConnection: {
+    data: (parent: any) =>
+      typeof parent.data === "function" ? parent.data() : parent.data,
+    total: (parent: any) =>
+      typeof parent.total === "function" ? parent.total() : parent.total,
+    totalPages: (parent: any) =>
+      typeof parent.totalPages === "function"
+        ? parent.totalPages()
+        : parent.totalPages,
   },
 };
