@@ -20,7 +20,7 @@ export const userResolvers: Pick<
     },
 
     user: (_parent, { id }, context) => {
-      requireRole(context, ["ADMIN"]);
+      requireRole(context, ["ADMIN", "MANAGER"]);
 
       return userService.getUserById(id);
     },

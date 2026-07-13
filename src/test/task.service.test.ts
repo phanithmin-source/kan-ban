@@ -151,13 +151,13 @@ describe('TaskService', () => {
   });
 
   describe('updateTask', () => {
-    const mockTask = { id: 10, boardId: 1, title: 'Old Title' };
+    const mockTask = { id: 10, boardId: 1, title: 'Old Title', creatorId: 101, assigneeId: null };
     const mockInput = { title: 'New Title' };
-    const mockUserNormal = { id: 101, role: 'USER' as const };
+    const mockUserNormal = { id: 101, role: 'USER' as const }; // is the task creator
 
-    it('should update a task if user has access', async () => {
+    it('should update a task if user is task creator and a board member', async () => {
       (taskRepository.findById as jest.Mock).mockResolvedValue(mockTask);
-      (boardRepository.findMember as jest.Mock).mockResolvedValue({ userId: mockUserNormal.id });
+      (boardRepository.findMember as jest.Mock).mockResolvedValue({ userId: mockUserNormal.id, role: BoardRole.MEMBER });
       (taskRepository.update as jest.Mock).mockResolvedValue({ ...mockTask, title: 'New Title' });
 
       const result = await taskService.updateTask(10, mockInput, mockUserNormal);
@@ -166,7 +166,38 @@ describe('TaskService', () => {
       expect(result.title).toBe('New Title');
     });
 
-    it('should throw ForbiddenError if non-admin user is not a board member', async () => {
+    it('should throw ForbiddenError if user is a MEMBER but neither creator nor assignee', async () => {
+      const otherTask = { ...mockTask, creatorId: 999, assigneeId: null };
+      const otherUser = { id: 101, role: 'USER' as const };
+      (taskRepository.findById as jest.Mock).mockResolvedValue(otherTask);
+      (boardRepository.findMember as jest.Mock).mockResolvedValue({ userId: otherUser.id, role: BoardRole.MEMBER });
+
+      await expect(taskService.updateTask(10, mockInput, otherUser)).rejects.toThrow(ForbiddenError);
+    });
+
+    it('should allow board OWNER to edit any task regardless of creator/assignee', async () => {
+      const ownerUser = { id: 999, role: 'USER' as const };
+      const taskByOther = { ...mockTask, creatorId: 101, assigneeId: null };
+      (taskRepository.findById as jest.Mock).mockResolvedValue(taskByOther);
+      (boardRepository.findMember as jest.Mock).mockResolvedValue({ userId: ownerUser.id, role: BoardRole.OWNER });
+      (taskRepository.update as jest.Mock).mockResolvedValue({ ...taskByOther, title: 'New Title' });
+
+      const result = await taskService.updateTask(10, mockInput, ownerUser);
+      expect(taskRepository.update).toHaveBeenCalled();
+      expect(result.title).toBe('New Title');
+    });
+
+    it('should allow MANAGER to edit any task without board membership check', async () => {
+      const managerUser = { id: 999, role: 'MANAGER' as const };
+      (taskRepository.findById as jest.Mock).mockResolvedValue(mockTask);
+      (taskRepository.update as jest.Mock).mockResolvedValue({ ...mockTask, title: 'New Title' });
+
+      const result = await taskService.updateTask(10, mockInput, managerUser);
+      expect(boardRepository.findMember).not.toHaveBeenCalled();
+      expect(result.title).toBe('New Title');
+    });
+
+    it('should throw ForbiddenError if non-admin/manager user is not a board member', async () => {
       (taskRepository.findById as jest.Mock).mockResolvedValue(mockTask);
       (boardRepository.findMember as jest.Mock).mockResolvedValue(null);
 
@@ -182,12 +213,13 @@ describe('TaskService', () => {
   });
 
   describe('deleteTask', () => {
-    const mockTask = { id: 10, boardId: 1 };
-    const mockUserNormal = { id: 101, role: 'USER' as const };
+    const mockTask = { id: 10, boardId: 1, creatorId: 101 };
+    const mockUserNormal = { id: 999, role: 'USER' as const }; // different from creatorId
+    const mockUserCreator = { id: 101, role: 'USER' as const }; // task creator
 
-    it('should throw ForbiddenError if non-admin user is not board OWNER', async () => {
+    it('should throw ForbiddenError if non-admin/manager user is not board OWNER and not creator', async () => {
       (taskRepository.findById as jest.Mock).mockResolvedValue(mockTask);
-      // Member is not OWNER
+      // Member is not OWNER and not creator
       (boardRepository.findMember as jest.Mock).mockResolvedValue({ userId: mockUserNormal.id, role: BoardRole.MEMBER });
 
       await expect(taskService.deleteTask(10, mockUserNormal)).rejects.toThrow(ForbiddenError);
@@ -209,6 +241,29 @@ describe('TaskService', () => {
 
       const result = await taskService.deleteTask(10, mockUserNormal);
 
+      expect(taskRepository.delete).toHaveBeenCalledWith(10);
+      expect(result).toEqual(mockTask);
+    });
+
+    it('should delete task if user is the task creator (even as MEMBER)', async () => {
+      (taskRepository.findById as jest.Mock).mockResolvedValue(mockTask);
+      (boardRepository.findMember as jest.Mock).mockResolvedValue({ userId: mockUserCreator.id, role: BoardRole.MEMBER });
+      (taskRepository.delete as jest.Mock).mockResolvedValue(mockTask);
+
+      const result = await taskService.deleteTask(10, mockUserCreator);
+
+      expect(taskRepository.delete).toHaveBeenCalledWith(10);
+      expect(result).toEqual(mockTask);
+    });
+
+    it('should allow MANAGER to delete any task without board membership check', async () => {
+      const managerUser = { id: 500, role: 'MANAGER' as const };
+      (taskRepository.findById as jest.Mock).mockResolvedValue(mockTask);
+      (taskRepository.delete as jest.Mock).mockResolvedValue(mockTask);
+
+      const result = await taskService.deleteTask(10, managerUser);
+
+      expect(boardRepository.findMember).not.toHaveBeenCalled();
       expect(taskRepository.delete).toHaveBeenCalledWith(10);
       expect(result).toEqual(mockTask);
     });

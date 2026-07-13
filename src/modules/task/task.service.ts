@@ -116,11 +116,25 @@ class TaskService {
       throw new NotFoundError("Task not found");
     }
 
-    if (currentUser.role !== "ADMIN") {
+    // ADMIN and MANAGER can always edit tasks
+    if (currentUser.role !== "ADMIN" && currentUser.role !== "MANAGER") {
       const member = await boardRepository.findMember(task.boardId, currentUser.id);
+
+      // Must be a board member (not VIEWER)
       if (!member || member.role === BoardRole.VIEWER) {
         throw new ForbiddenError(
           "You do not have permission to edit tasks on this board"
+        );
+      }
+
+      // Board MEMBERs (not OWNER) can only edit tasks they created or are assigned to
+      if (
+        member.role !== "OWNER" &&
+        task.creatorId !== currentUser.id &&
+        task.assigneeId !== currentUser.id
+      ) {
+        throw new ForbiddenError(
+          "You can only edit tasks you created or are assigned to"
         );
       }
     }
@@ -148,11 +162,18 @@ class TaskService {
       throw new NotFoundError("Task not found");
     }
 
-    if (currentUser.role !== "ADMIN") {
-      const member = await boardRepository.findMember(task.boardId, currentUser.id);
-      if (!member || member.role !== "OWNER") {
-        throw new ForbiddenError("Only board owners or admins can delete tasks");
-      }
+    // ADMIN and MANAGER can always delete tasks
+    if (currentUser.role === "ADMIN" || currentUser.role === "MANAGER") {
+      return taskRepository.delete(id);
+    }
+
+    // For regular USERs: must be board OWNER or the task creator
+    const member = await boardRepository.findMember(task.boardId, currentUser.id);
+    const isOwner = member?.role === "OWNER";
+    const isCreator = task.creatorId === currentUser.id;
+
+    if (!isOwner && !isCreator) {
+      throw new ForbiddenError("Only board owners, task creators, managers, or admins can delete tasks");
     }
 
     return taskRepository.delete(id);
@@ -172,20 +193,20 @@ class TaskService {
       throw new NotFoundError("Task not found");
     }
 
-    if (currentUser.role !== "ADMIN") {
+    // ADMIN and MANAGER can always move tasks
+    if (currentUser.role !== "ADMIN" && currentUser.role !== "MANAGER") {
       const member = await boardRepository.findMember(task.boardId, currentUser.id);
+
+      // VIEWER cannot move tasks
       if (!member || member.role === BoardRole.VIEWER) {
         throw new ForbiddenError(
-          "You do not have permission to access this board"
+          "You do not have permission to move tasks on this board"
         );
       }
 
-      // If user is USER role, require assignee matches or they are board OWNER/MEMBER
-      if (currentUser.role === "USER" && task.assigneeId !== currentUser.id) {
-        // Allow board owner or manager to move, but standard USER can only move if assigned
-        if (member.role !== "OWNER") {
-          throw new ForbiddenError("You can only move tasks assigned to you");
-        }
+      // Board MEMBERs (not OWNER) can only move tasks assigned to them
+      if (member.role !== "OWNER" && task.assigneeId !== currentUser.id) {
+        throw new ForbiddenError("You can only move tasks that are assigned to you");
       }
     }
 

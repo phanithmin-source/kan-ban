@@ -11,6 +11,20 @@ import {
 import { ForbiddenError } from "../../utils/errors.js";
 import { BoardRole } from "@prisma/client";
 
+/**
+ * Returns true if the given userId holds the OWNER role on the board,
+ * or if the caller is a system ADMIN (who bypasses board-level checks).
+ */
+async function isBoardOwnerOrAdmin(
+  boardId: number,
+  userId: number,
+  userRole: string
+): Promise<boolean> {
+  if (userRole === "ADMIN") return true;
+  const member = await boardRepository.findMember(boardId, userId);
+  return member?.role === BoardRole.OWNER;
+}
+
 export const boardResolvers: Pick<
   Resolvers,
   "Query" | "Mutation" | "Board" | "BoardMember"
@@ -61,12 +75,7 @@ export const boardResolvers: Pick<
     updateBoard: async (_parent, { id, input }, context) => {
       const user = requireAuth(context);
 
-      const board = await boardService.getBoardById(id);
-
-      if (
-        user.role !== "ADMIN" &&
-        board.ownerId !== user.id
-      ) {
+      if (!await isBoardOwnerOrAdmin(id, user.id, user.role)) {
         throw new ForbiddenError(
           "You do not have permission"
         );
@@ -81,12 +90,7 @@ export const boardResolvers: Pick<
     deleteBoard: async (_parent, { id }, context) => {
       const user = requireAuth(context);
 
-      const board = await boardService.getBoardById(id);
-
-      if (
-        user.role !== "ADMIN" &&
-        board.ownerId !== user.id
-      ) {
+      if (!await isBoardOwnerOrAdmin(id, user.id, user.role)) {
         throw new ForbiddenError(
           "You do not have permission"
         );
@@ -100,12 +104,7 @@ export const boardResolvers: Pick<
     archiveBoard: async (_parent, { id }, context) => {
       const user = requireAuth(context);
 
-      const board = await boardService.getBoardById(id);
-
-      if (
-        user.role !== "ADMIN" &&
-        board.ownerId !== user.id
-      ) {
+      if (!await isBoardOwnerOrAdmin(id, user.id, user.role)) {
         throw new ForbiddenError(
           "You do not have permission to archive this board"
         );
@@ -117,12 +116,7 @@ export const boardResolvers: Pick<
     restoreBoard: async (_parent, { id }, context) => {
       const user = requireAuth(context);
 
-      const board = await boardService.getBoardById(id);
-
-      if (
-        user.role !== "ADMIN" &&
-        board.ownerId !== user.id
-      ) {
+      if (!await isBoardOwnerOrAdmin(id, user.id, user.role)) {
         throw new ForbiddenError(
           "You do not have permission to restore this board"
         );
@@ -134,12 +128,7 @@ export const boardResolvers: Pick<
     addBoardMember: async (_parent, { boardId, userId, role }, context) => {
       const user = requireAuth(context);
 
-      const board = await boardService.getBoardById(boardId);
-
-      if (
-        user.role !== "ADMIN" &&
-        board.ownerId !== user.id
-      ) {
+      if (!await isBoardOwnerOrAdmin(boardId, user.id, user.role)) {
         throw new ForbiddenError(
           "You do not have permission to add members to this board"
         );
@@ -151,12 +140,7 @@ export const boardResolvers: Pick<
     removeBoardMember: async (_parent, { boardId, userId }, context) => {
       const user = requireAuth(context);
 
-      const board = await boardService.getBoardById(boardId);
-
-      if (
-        user.role !== "ADMIN" &&
-        board.ownerId !== user.id
-      ) {
+      if (!await isBoardOwnerOrAdmin(boardId, user.id, user.role)) {
         throw new ForbiddenError(
           "You do not have permission to remove members from this board"
         );
@@ -168,12 +152,7 @@ export const boardResolvers: Pick<
     updateBoardMemberRole: async (_parent, { boardId, userId, role }, context) => {
       const user = requireAuth(context);
 
-      const board = await boardService.getBoardById(boardId);
-
-      if (
-        user.role !== "ADMIN" &&
-        board.ownerId !== user.id
-      ) {
+      if (!await isBoardOwnerOrAdmin(boardId, user.id, user.role)) {
         throw new ForbiddenError(
           "You do not have permission to update member roles on this board"
         );
