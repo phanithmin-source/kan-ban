@@ -23,6 +23,7 @@
     "@as-integrations/express5": "^1.1.2",
     "@faker-js/faker": "^10.5.0",
     "@prisma/client": "6.19.3",
+    "@upstash/redis": "^1.38.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",

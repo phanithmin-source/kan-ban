@@ -1,5 +1,6 @@
 import prisma from "../../config/prisma.js";
 import { Prisma, Role, BoardRole } from "@prisma/client";
+import cache from "../../utils/cache.js";
 
 class BoardRepository {
   /**
@@ -22,11 +23,15 @@ class BoardRepository {
    * ADMIN -> all active boards
    * Others -> boards they are members of
    */
-  findAllAccessible(
+  async findAllAccessible(
     userId: number,
     role: Role
   ) {
-    return prisma.board.findMany({
+    const cacheKey = `boards:user:${userId}`;
+    const cached = await cache.get(cacheKey);
+    if (cached) return cached as Awaited<ReturnType<typeof prisma.board.findMany>>;
+
+    const result = await prisma.board.findMany({
       where: {
         archived: false,
         ...(role === "ADMIN"
@@ -45,6 +50,9 @@ class BoardRepository {
         createdAt: "asc",
       },
     });
+
+    await cache.set(cacheKey, result, 60);
+    return result;
   }
 
   /**
@@ -64,12 +72,16 @@ class BoardRepository {
    * ADMIN -> any board by ID
    * Others -> only boards they are members of
    */
-  findAccessibleById(
+  async findAccessibleById(
     id: number,
     userId: number,
     role: Role
   ) {
-    return prisma.board.findFirst({
+    const cacheKey = `board:${id}`;
+    const cached = await cache.get(cacheKey);
+    if (cached) return cached as Awaited<ReturnType<typeof prisma.board.findFirst>>;
+
+    const result = await prisma.board.findFirst({
       where: {
         id,
         ...(role === Role.ADMIN
@@ -90,6 +102,9 @@ class BoardRepository {
         },
       },
     });
+
+    await cache.set(cacheKey, result, 60);
+    return result;
   }
 
   create(data: {
@@ -119,11 +134,11 @@ class BoardRepository {
     });
   }
 
-  update(
+  async update(
     id: number,
     data: Prisma.BoardUpdateInput
   ) {
-    return prisma.board.update({
+    const result = await prisma.board.update({
       where: {
         id,
       },
@@ -134,14 +149,21 @@ class BoardRepository {
         members: true,
       },
     });
+    await cache.invalidate(`board:${id}`);
+    await cache.invalidateByPrefix(`boards:user:`);
+    return result;
   }
 
-  delete(id: number) {
-    return prisma.board.delete({
+  async delete(id: number) {
+    const result = await prisma.board.delete({
       where: {
         id,
       },
     });
+    await cache.invalidate(`board:${id}`);
+    await cache.invalidateByPrefix(`boards:user:`);
+    await cache.invalidateByPrefix(`tasks:${id}:`);
+    return result;
   }
 
   // Board Member queries
@@ -153,8 +175,8 @@ class BoardRepository {
     });
   }
 
-  addMember(boardId: number, userId: number, role: BoardRole) {
-    return prisma.boardMember.create({
+  async addMember(boardId: number, userId: number, role: BoardRole) {
+    const result = await prisma.boardMember.create({
       data: {
         boardId,
         userId,
@@ -164,14 +186,20 @@ class BoardRepository {
         user: true,
       },
     });
+    await cache.invalidate(`board:${boardId}`);
+    await cache.invalidateByPrefix(`boards:user:`);
+    return result;
   }
 
-  removeMember(boardId: number, userId: number) {
-    return prisma.boardMember.delete({
+  async removeMember(boardId: number, userId: number) {
+    const result = await prisma.boardMember.delete({
       where: {
         boardId_userId: { boardId, userId },
       },
     });
+    await cache.invalidate(`board:${boardId}`, `boards:user:${userId}`);
+    await cache.invalidateByPrefix(`boards:user:`);
+    return result;
   }
 
   updateMemberRole(boardId: number, userId: number, role: BoardRole) {

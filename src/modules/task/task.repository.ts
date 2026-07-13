@@ -2,6 +2,7 @@ import { Prisma, Role } from "@prisma/client";
 
 import prisma from "../../config/prisma.js";
 import type { TaskFilter } from "./task.types.js";
+import cache from "../../utils/cache.js";
 
 class TaskRepository {
   private buildWhere(filter: TaskFilter): Prisma.TaskWhereInput {
@@ -138,11 +139,15 @@ class TaskRepository {
     };
   }
 
-  findManyAccessible(
+  async findManyAccessible(
     userId: number,
     role: Role,
     filter: TaskFilter
   ) {
+    const cacheKey = `tasks:${filter.boardId ?? "all"}:status:${filter.status ?? "all"}:p:${filter.page ?? 1}:l:${filter.limit ?? 10}:s:${filter.search ?? ""}:pr:${filter.priority ?? ""}`;
+    const cached = await cache.get(cacheKey);
+    if (cached) return cached as Awaited<ReturnType<typeof prisma.task.findMany>>;
+
     const page = filter.page ?? 1;
     const limit = filter.limit ?? 10;
     const skip = (page - 1) * limit;
@@ -159,7 +164,7 @@ class TaskRepository {
 
     const orderBy = this.buildOrderBy(filter);
 
-    return prisma.task.findMany({
+    const result = await prisma.task.findMany({
       where,
       orderBy,
       skip,
@@ -171,6 +176,9 @@ class TaskRepository {
         creator: true,
       },
     });
+
+    await cache.set(cacheKey, result, 30);
+    return result;
   }
 
   countAccessible(
@@ -228,7 +236,7 @@ class TaskRepository {
     });
   }
 
-  create(data: {
+  async create(data: {
     title: string;
     description?: string;
     status: Prisma.TaskCreateInput["status"];
@@ -237,21 +245,24 @@ class TaskRepository {
     board: Prisma.BoardCreateNestedOneWithoutTasksInput;
     creator: Prisma.UserCreateNestedOneWithoutCreatedTasksInput;
   }) {
-    return prisma.task.create({
-      data,
-    });
+    const result = await prisma.task.create({ data });
+    // Invalidate all task cache entries for the board
+    const boardId = (data.board as any)?.connect?.id;
+    if (boardId) await cache.invalidateByPrefix(`tasks:${boardId}:`);
+    return result;
   }
 
-  update(
+  async update(
     id: number,
     data: Prisma.TaskUpdateInput
   ) {
-    return prisma.task.update({
-      where: {
-        id,
-      },
+    const result = await prisma.task.update({
+      where: { id },
       data,
     });
+    // Invalidate all column caches for the board this task belongs to
+    if (result.boardId) await cache.invalidateByPrefix(`tasks:${result.boardId}:`);
+    return result;
   }
 
   assignTask(
@@ -272,12 +283,12 @@ class TaskRepository {
     });
   }
 
-  delete(id: number) {
-    return prisma.task.delete({
-      where: {
-        id,
-      },
-    });
+  async delete(id: number) {
+    // Fetch boardId before deletion so we can invalidate the right keys
+    const task = await prisma.task.findUnique({ where: { id }, select: { boardId: true } });
+    const result = await prisma.task.delete({ where: { id } });
+    if (task?.boardId) await cache.invalidateByPrefix(`tasks:${task.boardId}:`);
+    return result;
   }
 
   // Comments
