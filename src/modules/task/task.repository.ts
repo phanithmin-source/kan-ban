@@ -164,6 +164,7 @@ class TaskRepository {
       orderBy,
       skip,
       take: limit,
+      relationLoadStrategy: "join",
       include: {
         board: true,
         assignee: true,
@@ -210,6 +211,7 @@ class TaskRepository {
               },
             }),
       },
+      relationLoadStrategy: "join",
       include: {
         board: true,
         assignee: true,

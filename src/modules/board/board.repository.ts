@@ -37,6 +37,7 @@ class BoardRepository {
               },
             }),
       },
+      relationLoadStrategy: "join",
       include: {
         owner: true,
       },
@@ -79,6 +80,7 @@ class BoardRepository {
               },
             }),
       },
+      relationLoadStrategy: "join",
       include: {
         owner: true,
         members: {
