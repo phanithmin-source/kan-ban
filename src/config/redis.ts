@@ -2,8 +2,7 @@ import { Redis as UpstashRedis } from "@upstash/redis";
 import { createClient } from "redis";
 import { env } from "./env.js";
 
-export const isProduction = env.NODE_ENV === "production";
-
+export const useUpstash = env.CACHE_PROVIDER === "upstash";
 export const localRedis = createClient({
   url: env.REDIS_URL,
 });
@@ -17,12 +16,12 @@ localRedis.on("error", (err) => {
 });
 
 export async function connectRedis() {
-  if (!isProduction && !localRedis.isOpen) {
+  if (!useUpstash && !localRedis.isOpen) {
     await localRedis.connect();
   }
 }
 
-export const upstashRedis = isProduction
+export const upstashRedis = useUpstash
   ? new UpstashRedis({
       url: env.UPSTASH_REDIS_REST_URL!,
       token: env.UPSTASH_REDIS_REST_TOKEN!,
