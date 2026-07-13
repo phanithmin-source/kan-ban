@@ -2,7 +2,7 @@ import { Prisma, Role } from "@prisma/client";
 
 import prisma from "../../config/prisma.js";
 import type { TaskFilter } from "./task.types.js";
-import cache from "../../utils/cache.js";
+import cache from "../../utils/cache/index.js";
 
 class TaskRepository {
   private buildWhere(filter: TaskFilter): Prisma.TaskWhereInput {

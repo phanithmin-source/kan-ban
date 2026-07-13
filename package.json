@@ -34,6 +34,7 @@
     "graphql-tag": "^2.12.7",
     "jsonwebtoken": "^9.0.3",
     "prisma": "6.19.3",
+    "redis": "^6.1.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

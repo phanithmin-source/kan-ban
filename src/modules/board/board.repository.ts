@@ -1,6 +1,6 @@
 import prisma from "../../config/prisma.js";
 import { Prisma, Role, BoardRole } from "@prisma/client";
-import cache from "../../utils/cache.js";
+import cache from "../../utils/cache/index.js";
 
 class BoardRepository {
   /**

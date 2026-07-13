@@ -7,15 +7,17 @@ import { expressMiddleware } from "@as-integrations/express5";
 import app from "./app.js";
 import { env } from "./config/env.js";
 import { createContext } from "./graphql/context.js";
-import { resolvers } from "./graphql/resolvers.js";
-import { typeDefs } from "./graphql/typeDefs.js";
 import { AppError } from "./utils/errors.js";
 import { schema } from "./graphql/schema.js";
+import { connectRedis } from "./config/redis.js";
 
 let server: ApolloServer | null = null;
 let apolloMiddleware: any = null;
 
 const initServerPromise = (async () => {
+
+  await connectRedis();
+
   server = new ApolloServer({
     schema,
     allowBatchedHttpRequests: true,
